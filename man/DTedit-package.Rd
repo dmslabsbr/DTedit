@@ -2,14 +2,15 @@
 % Please edit documentation in R/DTedit-package.R
 \docType{package}
 \name{DTedit-package}
+\alias{DTedit}
 \alias{DTedit-package}
-\title{Editable DataTables for shiny apps}
+\title{DTedit: Editable DataTables for shiny apps}
 \description{
-Editable DataTables for shiny apps
+This package extends the DT::DataTable to allow users to create, edit, and delete
+    rows from the data table.
 }
 \author{
-\email{jason@bryer.org}
+\strong{Maintainer}: Jason Bryer \email{jason@bryer.org}
+
 }
-\keyword{DataTable}
-\keyword{package}
-\keyword{shiny}
+\keyword{internal}

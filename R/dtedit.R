@@ -36,9 +36,14 @@
 #'        This can be a subset of the full \code{data.frame}.
 #' @param edit.cols character vector with the column names the user can edit/add.
 #'        This can be a subset of the full \code{data.frame}.
+#' @param edit.require.cols character vector with the column names required the user must edit/add.
+#'        This can be a subset of the full \code{data.frame}.
 #' @param edit.label.cols character vector with the labels to use on the edit
 #'        and add dialogs. The length and order of \code{code.cols.labels} must
 #'        correspond to \code{edit.cols}.
+#' @param view.label.cols character vector with the labels to use on the view
+#'        The length and order of \code{code.cols.labels} must
+#'        correspond to \code{view.cols}.
 #' @param input.types a character vector where the name corresponds to a column
 #'        in \code{edit.cols} and the value is the input type. Possible values
 #'        are \code{dateInput}, \code{selectInput}, \code{numericInput},
@@ -83,8 +88,10 @@
 #' @export
 dtedit <- function(input, output, name, thedata,
 				   view.cols = names(thedata),
+				   view.label.cols = view.cols,
 				   edit.cols = names(thedata),
 				   edit.label.cols = edit.cols,
+				   edit.require.cols = NULL,
 				   input.types,
 				   input.choices = NULL,
 				   selectize = TRUE,
@@ -103,6 +110,8 @@ dtedit <- function(input, output, name, thedata,
 				   label.edit = 'Edit',
 				   label.add = 'New',
 				   label.copy = 'Copy',
+				   label.cancel = 'Cancel',
+				   label.save = 'Save',
 				   show.delete = TRUE,
 				   show.update = TRUE,
 				   show.insert = TRUE,
@@ -113,22 +122,31 @@ dtedit <- function(input, output, name, thedata,
 				   click.time.threshold = 2, # in seconds
 				   datatable.options = list(pageLength=defaultPageLength)
 ) {
+  message("edit.require.cols")
+  print(edit.require.cols)
 	# Some basic parameter checking
 	if(!is.data.frame(thedata) | ncol(thedata) < 1) {
 		stop('Must provide a data frame with at least one column.')
 	} else if(length(edit.cols) != length(edit.label.cols)) {
 		stop('edit.cols and edit.label.cols must be the same length.')
+	} else if(length(view.cols) != length(view.label.cols)) {
+	    stop('view.cols and view.label.cols must be the same length.')
 	} else if(!all(view.cols %in% names(thedata))) {
 		stop('Not all view.cols are in the data.')
 	} else if(!all(edit.cols %in% names(thedata))) {
 		stop('Not all edit.cols are in the data.')
 	}
 
+  if(!all(edit.require.cols %in% names(thedata))) {
+    stop('a edit.require.cols not in the data')
+  }
+  
 	DataTableName <- paste0(name, 'dt')
 
 	result <- shiny::reactiveValues()
 	result$thedata <- thedata
 	result$view.cols <- view.cols
+	result$view.label.cols <- view.label.cols
 	result$edit.cols <- edit.cols
 
 	dt.proxy <- DT::dataTableProxy(DataTableName)
@@ -171,11 +189,20 @@ dtedit <- function(input, output, name, thedata,
 
 	output[[DataTableName]] <- DT::renderDataTable({
 		thedata[,view.cols]
-	}, options = datatable.options, server=TRUE, selection='single', rownames=FALSE)
+	}, options = datatable.options, server=TRUE, selection='single', rownames=FALSE, colnames = c('#', 'Area', 'Bloco', 'Atividade', 'Responsável', 'Tipo', 'Status', 'Início', 'Fim', 'Descrição', 'Entregas', 'Envolvidos', 'Comarcas', "Custo (R$)"))# view.label.cols )
 
 	getFields <- function(typeName, values) {
 		fields <- list()
 		for(i in seq_along(edit.cols)) {
+		  message('edit: ',i)
+		  print(edit.label.cols[i])
+		  message('é = ',(edit.cols[i] %in% edit.require.cols))
+		  if (all(edit.cols[i] %in% edit.require.cols)) {
+		    # TODO - show * in red.
+		    edit.label.cols[i] <- paste0(edit.label.cols[i],'(*)')
+		    #edit.label.cols[i] <- paste0(edit.label.cols[i], tags$strong(style='color:FF0000','(*)'))
+		    message('n*: ', edit.label.cols[i])
+		  }
 			if(inputTypes[i] == 'dateInput') {
 				value <- ifelse(missing(values),
 								as.character(Sys.Date()),
@@ -281,12 +308,31 @@ dtedit <- function(input, output, name, thedata,
 		newdata <- result$thedata
 		row <- nrow(newdata) + 1
 		newdata[row,] <- NA
+		lReq <- list()
 		for(i in edit.cols) {
+		  input_add <- input[[paste0(name, '_add_', i)]]
+		  message('edit cols input: ',i, '  ', input_add)
+		  message('é campo req: ', (edit.cols[i] %in% edit.require.cols))
+		  if (all(edit.cols[i] %in% edit.require.cols)) {
+		    if (input_add == '') {
+		      lReq[i] <- FALSE
+		    }
+		  }	else {
+		    lReq[i] <- TRUE
+		  }	          
 			if(inputTypes[i] %in% c('selectInputMultiple')) {
 				newdata[[i]][row] <- list(input[[paste0(name, '_add_', i)]])
 			} else {
 				newdata[row,i] <- input[[paste0(name, '_add_', i)]]
 			}
+		}
+		print("LREQ:")
+		print(lReq)
+		message("all unlist: ", all(unlist(lReq)))
+		if (!all(unlist(lReq))) {
+		  # need field
+		  output[[paste0(name, '_message')]] <<- shiny::renderText('Campo necessário')
+		  return(FALSE)
 		}
 		tryCatch({
 			callback.data <- callback.insert(data = newdata, row = row)
@@ -312,8 +358,8 @@ dtedit <- function(input, output, name, thedata,
 		shiny::modalDialog(title = title.add,
 					shiny::div(shiny::textOutput(paste0(name, '_message')), style='color:red'),
 					fields,
-					footer = shiny::column(shiny::modalButton('Cancel'),
-									shiny::actionButton(paste0(name, '_insert'), 'Save'),
+					footer = shiny::column(shiny::modalButton(label.cancel), #'Cancel'
+									shiny::actionButton(paste0(name, '_insert'), label.save), #'Save'
 									width=12),
 					size = modal.size
 		)
@@ -393,8 +439,8 @@ dtedit <- function(input, output, name, thedata,
 		shiny::modalDialog(title = title.edit,
 			shiny::div(shiny::textOutput(paste0(name, '_message')), style='color:red'),
 			fields,
-			footer = column(shiny::modalButton('Cancel'),
-							shiny::actionButton(paste0(name, '_update'), 'Save'),
+			footer = column(shiny::modalButton(label.cancel), # CANCEL
+							shiny::actionButton(paste0(name, '_update'), label.save), #Save
 							width=12),
 			size = modal.size
 		)
@@ -457,6 +503,18 @@ dtedit <- function(input, output, name, thedata,
 			shiny::br(), shiny::br(), DT::dataTableOutput(DataTableName)
 		)
 	})
+	
+	# for create
+	if (1==2) {
+	  # cmd clear and rebuild
+	  devtools::document()
+	  devtools::install()
+	  usethis::use_package_doc()
+	  devtools::document()
+	  devtools::build()
+	  devtools::build(binary = TRUE, args = c('--preclean'))
+	  
+	}
 
 	return(result)
 }

@@ -5,7 +5,8 @@
 \title{Function to create a DataTable with Add, Edit, and Delete buttons.}
 \usage{
 dtedit(input, output, name, thedata, view.cols = names(thedata),
-  edit.cols = names(thedata), edit.label.cols = edit.cols, input.types,
+  view.label.cols = view.cols, edit.cols = names(thedata),
+  edit.label.cols = edit.cols, edit.require.cols = NULL, input.types,
   input.choices = NULL, selectize = TRUE, modal.size = "m",
   text.width = "100\%", textarea.width = "570px",
   textarea.height = "200px", date.width = "100px",
@@ -13,8 +14,9 @@ dtedit(input, output, name, thedata, view.cols = names(thedata),
   defaultPageLength = 10, title.delete = "Delete",
   title.edit = "Edit", title.add = "New", label.delete = "Delete",
   label.edit = "Edit", label.add = "New", label.copy = "Copy",
-  show.delete = TRUE, show.update = TRUE, show.insert = TRUE,
-  show.copy = TRUE, callback.delete = function(data, row) { },
+  label.cancel = "Cancel", label.save = "Save", show.delete = TRUE,
+  show.update = TRUE, show.insert = TRUE, show.copy = TRUE,
+  callback.delete = function(data, row) { },
   callback.update = function(data, olddata, row) { },
   callback.insert = function(data, row) { }, click.time.threshold = 2,
   datatable.options = list(pageLength = defaultPageLength))
@@ -33,12 +35,19 @@ within a Shiny application the name must be unique.}
 \item{view.cols}{character vector with the column names to show in the DataTable.
 This can be a subset of the full \code{data.frame}.}
 
+\item{view.label.cols}{character vector with the labels to use on the view
+The length and order of \code{code.cols.labels} must
+correspond to \code{view.cols}.}
+
 \item{edit.cols}{character vector with the column names the user can edit/add.
 This can be a subset of the full \code{data.frame}.}
 
 \item{edit.label.cols}{character vector with the labels to use on the edit
 and add dialogs. The length and order of \code{code.cols.labels} must
 correspond to \code{edit.cols}.}
+
+\item{edit.require.cols}{character vector with the column names required the user must edit/add.
+This can be a subset of the full \code{data.frame}.}
 
 \item{input.types}{a character vector where the name corresponds to a column
 in \code{edit.cols} and the value is the input type. Possible values
