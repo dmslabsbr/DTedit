@@ -60,6 +60,7 @@
 #' @param textarea.width the width of text area inputs.
 #' @param textarea.height the height of text area inputs.
 #' @param date.width the width of data inputs
+#' @param date.format the default of data format inputs.
 #' @param numeric.width the width of numeric inputs.
 #' @param select.width the width of drop down inputs.
 #' @param title.delete the title of the dialog box for deleting a row.
@@ -100,6 +101,7 @@ dtedit <- function(input, output, name, thedata,
 				   textarea.width = '570px',
 				   textarea.height = '200px',
 				   date.width = '100px',
+				   date.format = 'yyyy-mm-dd',
 				   numeric.width = '100px',
 				   select.width = '100%',
 				   defaultPageLength = 10,
@@ -122,8 +124,8 @@ dtedit <- function(input, output, name, thedata,
 				   click.time.threshold = 2, # in seconds
 				   datatable.options = list(pageLength=defaultPageLength)
 ) {
-  message("edit.require.cols")
-  print(edit.require.cols)
+  message("Version:",'0.0.11')
+  message('data - formato: ', date.format)
 	# Some basic parameter checking
 	if(!is.data.frame(thedata) | ncol(thedata) < 1) {
 		stop('Must provide a data frame with at least one column.')
@@ -189,7 +191,7 @@ dtedit <- function(input, output, name, thedata,
 
 	output[[DataTableName]] <- DT::renderDataTable({
 		thedata[,view.cols]
-	}, options = datatable.options, server=TRUE, selection='single', rownames=FALSE, colnames = c('#', 'Area', 'Bloco', 'Atividade', 'Responsável', 'Tipo', 'Status', 'Início', 'Fim', 'Descrição', 'Entregas', 'Envolvidos', 'Comarcas', "Custo (R$)"))# view.label.cols )
+	}, options = datatable.options, server=TRUE, selection='single', rownames=FALSE, colnames = view.label.cols )
 
 	getFields <- function(typeName, values) {
 		fields <- list()
@@ -210,6 +212,7 @@ dtedit <- function(input, output, name, thedata,
 				fields[[i]] <- dateInput(paste0(name, typeName, edit.cols[i]),
 										 label=edit.label.cols[i],
 										 value=value,
+										 format=date.format,
 										 width=date.width)
 			} else if(inputTypes[i] == 'selectInputMultiple') {
 				value <- ifelse(missing(values), '', values[,edit.cols[i]])
@@ -309,17 +312,19 @@ dtedit <- function(input, output, name, thedata,
 		row <- nrow(newdata) + 1
 		newdata[row,] <- NA
 		lReq <- list()
+		lack <- c()
 		for(i in edit.cols) {
 		  input_add <- input[[paste0(name, '_add_', i)]]
-		  message('edit cols input: ',i, '  ', input_add)
-		  message('é campo req: ', (edit.cols[i] %in% edit.require.cols))
-		  if (all(edit.cols[i] %in% edit.require.cols)) {
-		    if (input_add == '') {
+		  message('edit cols input: ',i, '  ', input_add, ' class:', class(input_add))
+		  message('é campo req: ', (i %in% edit.require.cols))
+		  lReq[i] <- TRUE
+		  if (all(i %in% edit.require.cols)) {
+		    if (is.null(input_add) || identical(input_add,'') ) {
 		      lReq[i] <- FALSE
+		      lack <- c(lack,paste0(i))
 		    }
-		  }	else {
-		    lReq[i] <- TRUE
-		  }	          
+		  }
+		  message('inputTypes[i]: ',inputTypes[i])
 			if(inputTypes[i] %in% c('selectInputMultiple')) {
 				newdata[[i]][row] <- list(input[[paste0(name, '_add_', i)]])
 			} else {
@@ -329,9 +334,12 @@ dtedit <- function(input, output, name, thedata,
 		print("LREQ:")
 		print(lReq)
 		message("all unlist: ", all(unlist(lReq)))
+		message('lReq', lReq)
 		if (!all(unlist(lReq))) {
 		  # need field
-		  output[[paste0(name, '_message')]] <<- shiny::renderText('Campo necessário')
+		  msg <- 'Os seguintes campos são necessários: '
+		  msg <- paste0(msg,lack)
+		  output[[paste0(name, '_message')]] <<- shiny::renderText(msg)
 		  return(FALSE)
 		}
 		tryCatch({

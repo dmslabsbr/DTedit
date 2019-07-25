@@ -10,13 +10,13 @@ dtedit(input, output, name, thedata, view.cols = names(thedata),
   input.choices = NULL, selectize = TRUE, modal.size = "m",
   text.width = "100\%", textarea.width = "570px",
   textarea.height = "200px", date.width = "100px",
-  numeric.width = "100px", select.width = "100\%",
-  defaultPageLength = 10, title.delete = "Delete",
-  title.edit = "Edit", title.add = "New", label.delete = "Delete",
-  label.edit = "Edit", label.add = "New", label.copy = "Copy",
-  label.cancel = "Cancel", label.save = "Save", show.delete = TRUE,
-  show.update = TRUE, show.insert = TRUE, show.copy = TRUE,
-  callback.delete = function(data, row) { },
+  date.format = "yyyy-mm-dd", numeric.width = "100px",
+  select.width = "100\%", defaultPageLength = 10,
+  title.delete = "Delete", title.edit = "Edit", title.add = "New",
+  label.delete = "Delete", label.edit = "Edit", label.add = "New",
+  label.copy = "Copy", label.cancel = "Cancel", label.save = "Save",
+  show.delete = TRUE, show.update = TRUE, show.insert = TRUE,
+  show.copy = TRUE, callback.delete = function(data, row) { },
   callback.update = function(data, olddata, row) { },
   callback.insert = function(data, row) { }, click.time.threshold = 2,
   datatable.options = list(pageLength = defaultPageLength))
@@ -71,6 +71,8 @@ presented to the user for data entry.}
 \item{textarea.height}{the height of text area inputs.}
 
 \item{date.width}{the width of data inputs}
+
+\item{date.format}{the default of data format inputs.}
 
 \item{numeric.width}{the width of numeric inputs.}
 
