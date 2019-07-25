@@ -6,17 +6,20 @@
 \usage{
 dtedit(input, output, name, thedata, view.cols = names(thedata),
   view.label.cols = view.cols, edit.cols = names(thedata),
-  edit.label.cols = edit.cols, edit.require.cols = NULL, input.types,
-  input.choices = NULL, selectize = TRUE, modal.size = "m",
-  text.width = "100\%", textarea.width = "570px",
+  edit.label.cols = edit.cols, edit.require.cols = NULL,
+  edit.require.label = "The following fields are required: ",
+  input.types, input.choices = NULL, selectize = TRUE,
+  modal.size = "m", text.width = "100\%", textarea.width = "570px",
   textarea.height = "200px", date.width = "100px",
   date.format = "yyyy-mm-dd", numeric.width = "100px",
   select.width = "100\%", defaultPageLength = 10,
-  title.delete = "Delete", title.edit = "Edit", title.add = "New",
-  label.delete = "Delete", label.edit = "Edit", label.add = "New",
-  label.copy = "Copy", label.cancel = "Cancel", label.save = "Save",
-  show.delete = TRUE, show.update = TRUE, show.insert = TRUE,
-  show.copy = TRUE, callback.delete = function(data, row) { },
+  title.delete = "Delete",
+  title.delete.confirmation = "Are you sure you want to delete this record?",
+  title.edit = "Edit", title.add = "New", label.delete = "Delete",
+  label.edit = "Edit", label.add = "New", label.copy = "Copy",
+  label.cancel = "Cancel", label.save = "Save", show.delete = TRUE,
+  show.update = TRUE, show.insert = TRUE, show.copy = TRUE,
+  callback.delete = function(data, row) { },
   callback.update = function(data, olddata, row) { },
   callback.insert = function(data, row) { }, click.time.threshold = 2,
   datatable.options = list(pageLength = defaultPageLength))
@@ -49,6 +52,8 @@ correspond to \code{edit.cols}.}
 \item{edit.require.cols}{character vector with the column names required the user must edit/add.
 This can be a subset of the full \code{data.frame}.}
 
+\item{edit.require.label}{the label of require message.}
+
 \item{input.types}{a character vector where the name corresponds to a column
 in \code{edit.cols} and the value is the input type. Possible values
 are \code{dateInput}, \code{selectInput}, \code{numericInput},
@@ -72,7 +77,7 @@ presented to the user for data entry.}
 
 \item{date.width}{the width of data inputs}
 
-\item{date.format}{the default of data format inputs.}
+\item{date.format}{the default for data format inputs.}
 
 \item{numeric.width}{the width of numeric inputs.}
 
@@ -81,6 +86,8 @@ presented to the user for data entry.}
 \item{defaultPageLength}{number of rows to show in the data table by default.}
 
 \item{title.delete}{the title of the dialog box for deleting a row.}
+
+\item{title.delete.confirmation}{deletion confirmation message.}
 
 \item{title.edit}{the title of the dialog box for editing a row.}
 

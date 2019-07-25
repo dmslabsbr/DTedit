@@ -4,13 +4,18 @@
 \name{DTedit-package}
 \alias{DTedit}
 \alias{DTedit-package}
-\title{DTedit: Editable DataTables for shiny apps}
+\title{DTedit: New Editable DataTables for shiny apps}
 \description{
 This package extends the DT::DataTable to allow users to create, edit, and delete
-    rows from the data table.
+    rows from the data table. It is a fork of jbryer/DTedit.
 }
 \author{
-\strong{Maintainer}: Jason Bryer \email{jason@bryer.org}
+\strong{Maintainer}: Daniel \email{suporte@neoage.com.br}
+
+Authors:
+\itemize{
+  \item Jason Bryer \email{jason@bryer.org}
+}
 
 }
 \keyword{internal}

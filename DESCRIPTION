@@ -1,11 +1,12 @@
 Package: DTedit
-Title: Editable DataTables for shiny apps
-Version: 0.0.2
-Authors@R: person("Jason", "Bryer", email = "jason@bryer.org", role = c("aut", "cre"))
+Title: New Editable DataTables for shiny apps
+Version: 0.1.0
+Authors@R: c(person("Jason", "Bryer", email = "jason@bryer.org", role = c("aut")),
+             person("Daniel", "", email = "suporte@neoage.com.br", role = c("aut", "cre")))
 Description: This package extends the DT::DataTable to allow users to create, edit, and delete
-    rows from the data table.
+    rows from the data table. It is a fork of jbryer/DTedit.
 Depends: R (>= 3.3.2), DT, shiny
-Suggests: RSQLite
+Suggests: RSQLite, RMariaDB, DBI
 License: LGPL
 Encoding: UTF-8
 LazyData: true

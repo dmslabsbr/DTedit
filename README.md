@@ -1,13 +1,17 @@
 ## Editable DataTables for shiny apps.
 
-**Author:** Jason Bryer, Ph.D.
+**New Author:** dmslabsbr
+**Email:** suporte@neoage.com.br
+
+
+**Orginial Author:** Jason Bryer, Ph.D.
 **Email:** jason@bryer.org
 
 #### New version by DMS
 Use the `devtools` package to install the development version of `DTedit`:
 
 ```r
-devtools::install_github('jbryer/DTedit')
+devtools::install_github('dmslabsbr/DTedit')
 ```
 
 The `dtedit_demo` will run a sample `shiny` app with to editable data tables.
@@ -61,6 +65,44 @@ DTedit::dtedit(input, output,
 ```
 
 The `input` and `output` are passed from the `server` function. The `name` parameter will define the name of the object available to the `uiOutput`. The `thedata` is a `data.frame` for the initial view of the data table. This can be an empty (i.e. no rows) `data.frame`. The structure of the `data.frame` will define the inputs (e.g. `factor`s will be drop down, `Date` will use `dateInput`, `numeric`s will use `numericInput`, etc.). There are many other parameters to custom the behavior of `dtedit`, see `?dtedit` for the full list.
+
+
+* DMS Version 0.1.0 *
+```r
+DTedit::dtedit(input, output,
+               name = 'uiEdTable',
+               thedata = tb_dadoss,
+               view.cols = names(tb_dadoss),
+               view.label.cols = c_v_colnames,
+               edit.cols = c_ed_cols,
+               edit.label.cols = c_ed_l_cols, 
+               edit.require.cols = c_ed_cols,
+               edit.require.label = 'The following fields are required: ',
+               date.format = 'dd-mm-yyyy',
+               input.types = c_ed_input_t,
+               title.delete = "Apagar",
+               title.delete.confirmation = 'Are you sure you want to delete this record?',
+               title.edit = "Editar",
+               title.add = "Novo Registro",
+               label.delete = "Apagar",
+               label.edit = "Editar", 
+               label.add = "Novo",
+               label.copy = "Copiar",
+               label.cancel = "Cancelar",
+               label.save = "Gravar",
+               callback.update = my.update.callback,
+               callback.insert = my.insert.callback,
+               callback.delete = my.delete.callback)
+```
+
+The new parameters are:
+- `view.label.cols` - character vector with the labels to use on the view;
+- `edit.require.cols` - character vector with the column names required the user must edit/add;
+- `edit.require.label` - the label of require message.
+- `date.format` - the default for data format inputs.
+- `title.delete.confirmation` - deletion confirmation message.
+- `label.delete` - the label of the delete button.
+
 
 3. Use `uiOutput` in your UI to display the editable data table.
 

@@ -38,6 +38,7 @@
 #'        This can be a subset of the full \code{data.frame}.
 #' @param edit.require.cols character vector with the column names required the user must edit/add.
 #'        This can be a subset of the full \code{data.frame}.
+#' @param edit.require.label the label of require message.
 #' @param edit.label.cols character vector with the labels to use on the edit
 #'        and add dialogs. The length and order of \code{code.cols.labels} must
 #'        correspond to \code{edit.cols}.
@@ -60,13 +61,14 @@
 #' @param textarea.width the width of text area inputs.
 #' @param textarea.height the height of text area inputs.
 #' @param date.width the width of data inputs
-#' @param date.format the default of data format inputs.
+#' @param date.format the default for data format inputs.
 #' @param numeric.width the width of numeric inputs.
 #' @param select.width the width of drop down inputs.
 #' @param title.delete the title of the dialog box for deleting a row.
 #' @param title.edit the title of the dialog box for editing a row.
 #' @param title.add the title of the dialog box for inserting a new row.
 #' @param label.delete the label of the delete button.
+#' @param title.delete.confirmation deletion confirmation message.
 #' @param label.edit the label of the edit button.
 #' @param label.add the label of the add button.
 #' @param label.copy the label of the copy button.
@@ -93,6 +95,7 @@ dtedit <- function(input, output, name, thedata,
 				   edit.cols = names(thedata),
 				   edit.label.cols = edit.cols,
 				   edit.require.cols = NULL,
+				   edit.require.label = 'The following fields are required: ',
 				   input.types,
 				   input.choices = NULL,
 				   selectize = TRUE,
@@ -106,6 +109,7 @@ dtedit <- function(input, output, name, thedata,
 				   select.width = '100%',
 				   defaultPageLength = 10,
 				   title.delete = 'Delete',
+				   title.delete.confirmation = 'Are you sure you want to delete this record?',
 				   title.edit = 'Edit',
 				   title.add = 'New',
 				   label.delete = 'Delete',
@@ -124,8 +128,8 @@ dtedit <- function(input, output, name, thedata,
 				   click.time.threshold = 2, # in seconds
 				   datatable.options = list(pageLength=defaultPageLength)
 ) {
-  message("Version:",'0.0.11')
-  message('data - formato: ', date.format)
+  message("Version:",'0.0.13')
+  message('data - format: ', date.format)
 	# Some basic parameter checking
 	if(!is.data.frame(thedata) | ncol(thedata) < 1) {
 		stop('Must provide a data frame with at least one column.')
@@ -196,9 +200,6 @@ dtedit <- function(input, output, name, thedata,
 	getFields <- function(typeName, values) {
 		fields <- list()
 		for(i in seq_along(edit.cols)) {
-		  message('edit: ',i)
-		  print(edit.label.cols[i])
-		  message('é = ',(edit.cols[i] %in% edit.require.cols))
 		  if (all(edit.cols[i] %in% edit.require.cols)) {
 		    # TODO - show * in red.
 		    edit.label.cols[i] <- paste0(edit.label.cols[i],'(*)')
@@ -288,6 +289,25 @@ dtedit <- function(input, output, name, thedata,
 		DT::replaceData(proxy, data, ...)
 	}
 
+	
+	# check required fields
+  checkReq <- function(input, tag) {
+    lReq <- list() # TODO future use for color require fields
+    lack <- c()
+    for(i in edit.cols) {
+      input_add <- input[[paste0(name, tag, i)]]
+      lReq[i] <- TRUE
+      if (all(i %in% edit.require.cols)) {
+        if (is.null(input_add) || identical(input_add,'') ) {
+          lReq[i] <- FALSE
+          elem <- edit.label.cols[grep(paste0(i),edit.cols)]
+          lack <- c(lack,paste0(elem))
+        }
+      }
+    }
+    return (lack)
+  }	
+	
 	##### Insert functions #####################################################
 
 	observeEvent(input[[paste0(name, '_add')]], {
@@ -311,19 +331,22 @@ dtedit <- function(input, output, name, thedata,
 		newdata <- result$thedata
 		row <- nrow(newdata) + 1
 		newdata[row,] <- NA
-		lReq <- list()
+		lReq <- list() # TODO future use
 		lack <- c()
+		lack <- checkReq(input,'_add_')
+		lReq <- (length(lack)==0)
 		for(i in edit.cols) {
 		  input_add <- input[[paste0(name, '_add_', i)]]
-		  message('edit cols input: ',i, '  ', input_add, ' class:', class(input_add))
-		  message('é campo req: ', (i %in% edit.require.cols))
-		  lReq[i] <- TRUE
-		  if (all(i %in% edit.require.cols)) {
-		    if (is.null(input_add) || identical(input_add,'') ) {
-		      lReq[i] <- FALSE
-		      lack <- c(lack,paste0(i))
-		    }
-		  }
+		  #message('edit cols input: ',i, '  ', input_add, ' class:', class(input_add))
+		  #message('é campo req: ', (i %in% edit.require.cols))
+		  #lReq[i] <- TRUE
+		  #if (all(i %in% edit.require.cols)) {
+		  #  if (is.null(input_add) || identical(input_add,'') ) {
+		  #    lReq[i] <- FALSE
+		  #    elem <- edit.label.cols[grep(paste0(i),edit.cols)]
+		  #    lack <- c(lack,paste0(elem))
+		  #  }
+		  #}
 		  message('inputTypes[i]: ',inputTypes[i])
 			if(inputTypes[i] %in% c('selectInputMultiple')) {
 				newdata[[i]][row] <- list(input[[paste0(name, '_add_', i)]])
@@ -331,14 +354,11 @@ dtedit <- function(input, output, name, thedata,
 				newdata[row,i] <- input[[paste0(name, '_add_', i)]]
 			}
 		}
-		print("LREQ:")
-		print(lReq)
-		message("all unlist: ", all(unlist(lReq)))
-		message('lReq', lReq)
+
 		if (!all(unlist(lReq))) {
 		  # need field
-		  msg <- 'Os seguintes campos são necessários: '
-		  msg <- paste0(msg,lack)
+		  msg <- edit.require.label
+		  msg <- paste0(msg,toString(lack), '.')
 		  output[[paste0(name, '_message')]] <<- shiny::renderText(msg)
 		  return(FALSE)
 		}
@@ -411,6 +431,11 @@ dtedit <- function(input, output, name, thedata,
 		if(!is.null(row)) {
 			if(row > 0) {
 				newdata <- result$thedata
+				# by dms
+				lReq <- list() # TODO future use
+				lack <- c()
+				lack <- checkReq(input, '_edit_')
+				lReq <- (length(lack)==0)
 				for(i in edit.cols) {
 					if(inputTypes[i] %in% c('selectInputMultiple')) {
 						newdata[[i]][row] <- list(input[[paste0(name, '_edit_', i)]])
@@ -418,6 +443,13 @@ dtedit <- function(input, output, name, thedata,
 						newdata[row,i] <- input[[paste0(name, '_edit_', i)]]
 					}
 				}
+				if (!all(unlist(lReq))) {
+				  msg <- edit.require.label
+				  msg <- paste0(msg,toString(lack),'.')
+				  output[[paste0(name, '_message')]] <<- shiny::renderText(msg)
+				  return(FALSE)
+				}
+				
 				tryCatch({
 					callback.data <- callback.update(data = newdata,
 													 olddata = result$thedata,
@@ -487,14 +519,16 @@ dtedit <- function(input, output, name, thedata,
 
 	deleteModal <- function(row) {
 		fields <- list()
+		# TODO - Put Description, no field names.
+		# TODO - Format Text
 		for(i in view.cols) {
 			fields[[i]] <- div(paste0(i, ' = ', result$thedata[row,i]))
 		}
 		shiny::modalDialog(title = title.delete,
-					shiny::p('Are you sure you want to delete this record?'),
+					shiny::p(title.delete.confirmation), # 'Are you sure you want to delete this record?'
 					fields,
-					footer = shiny::column(modalButton('Cancel'),
-									shiny::actionButton(paste0(name, '_delete'), 'Delete'),
+					footer = shiny::column(modalButton(label.cancel), #CANCEL
+									shiny::actionButton(paste0(name, '_delete'), label.delete), # 'Delete'
 									width=12),
 					size = modal.size
 		)
