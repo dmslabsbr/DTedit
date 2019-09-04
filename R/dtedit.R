@@ -1,3 +1,17 @@
+#' Show dtedit version
+#'
+#' @return version
+#'
+#' @export
+version <- function() {
+  res <- '0.0.20b'
+  return(res)
+}
+
+insert.click <- NA
+update.click <- NA
+
+
 #' Function to create a DataTable with Add, Edit, and Delete buttons.
 #'
 #' This object will maintain data state. However, in order of the data to persist
@@ -128,8 +142,10 @@ dtedit <- function(input, output, name, thedata,
 				   click.time.threshold = 2, # in seconds
 				   datatable.options = list(pageLength=defaultPageLength)
 ) {
-  message("Version:",'0.0.13')
+  message("DtEdit Version:",version())
   message('data - format: ', date.format)
+  message('Current namespace: ', getAnywhere('input')$where)
+  message("the Data", thedata)
 	# Some basic parameter checking
 	if(!is.data.frame(thedata) | ncol(thedata) < 1) {
 		stop('Must provide a data frame with at least one column.')
@@ -148,6 +164,8 @@ dtedit <- function(input, output, name, thedata,
   }
   
 	DataTableName <- paste0(name, 'dt')
+	
+	message('name: ', DataTableName)
 
 	result <- shiny::reactiveValues()
 	result$thedata <- thedata
@@ -310,23 +328,23 @@ dtedit <- function(input, output, name, thedata,
 	
 	##### Insert functions #####################################################
 
-	observeEvent(input[[paste0(name, '_add')]], {
+  shiny::observeEvent(input[[paste0(name, '_add')]], {
 		if(!is.null(row)) {
 			shiny::showModal(addModal())
 		}
 	})
 
-	insert.click <- NA
 
-	observeEvent(input[[paste0(name, '_insert')]], {
+  shiny::observeEvent(input[[paste0(name, '_insert')]], {
 		if(!is.na(insert.click)) {
 			lastclick <- as.numeric(Sys.time() - insert.click, units = 'secs')
+			message('last_click_i: ', lastclick)
 			if(lastclick < click.time.threshold) {
 				warning(paste0('Double click detected. Ignoring insert call for ', name, '.'))
 				return()
 			}
 		}
-		insert.click <<- Sys.time()
+		insert.click <- Sys.time()
 
 		newdata <- result$thedata
 		row <- nrow(newdata) + 1
@@ -337,17 +355,7 @@ dtedit <- function(input, output, name, thedata,
 		lReq <- (length(lack)==0)
 		for(i in edit.cols) {
 		  input_add <- input[[paste0(name, '_add_', i)]]
-		  #message('edit cols input: ',i, '  ', input_add, ' class:', class(input_add))
-		  #message('é campo req: ', (i %in% edit.require.cols))
-		  #lReq[i] <- TRUE
-		  #if (all(i %in% edit.require.cols)) {
-		  #  if (is.null(input_add) || identical(input_add,'') ) {
-		  #    lReq[i] <- FALSE
-		  #    elem <- edit.label.cols[grep(paste0(i),edit.cols)]
-		  #    lack <- c(lack,paste0(elem))
-		  #  }
-		  #}
-		  message('inputTypes[i]: ',inputTypes[i])
+		  #message('inputTypes[i]: ',inputTypes[i])
 			if(inputTypes[i] %in% c('selectInputMultiple')) {
 				newdata[[i]][row] <- list(input[[paste0(name, '_add_', i)]])
 			} else {
@@ -395,7 +403,7 @@ dtedit <- function(input, output, name, thedata,
 
 	##### Copy functions #######################################################
 
-	observeEvent(input[[paste0(name, '_copy')]], {
+	shiny::observeEvent(input[[paste0(name, '_copy')]], {
 		row <- input[[paste0(name, 'dt_rows_selected')]]
 		if(!is.null(row)) {
 			if(row > 0) {
@@ -406,7 +414,7 @@ dtedit <- function(input, output, name, thedata,
 
 	##### Update functions #####################################################
 
-	observeEvent(input[[paste0(name, '_edit')]], {
+	shiny::observeEvent(input[[paste0(name, '_edit')]], {
 		row <- input[[paste0(name, 'dt_rows_selected')]]
 		if(!is.null(row)) {
 			if(row > 0) {
@@ -415,9 +423,9 @@ dtedit <- function(input, output, name, thedata,
 		}
 	})
 
-	update.click <- NA
 
-	observeEvent(input[[paste0(name, '_update')]], {
+
+	shiny::observeEvent(input[[paste0(name, '_update')]], {
 		if(!is.na(update.click)) {
 			lastclick <- as.numeric(Sys.time() - update.click, units = 'secs')
 			if(lastclick < click.time.threshold) {
@@ -474,12 +482,12 @@ dtedit <- function(input, output, name, thedata,
 	})
 
 	editModal <- function(row) {
-		output[[paste0(name, '_message')]] <- renderText('')
+		output[[paste0(name, '_message')]] <- shiny::renderText('')
 		fields <- getFields('_edit_', values=result$thedata[row,])
 		shiny::modalDialog(title = title.edit,
 			shiny::div(shiny::textOutput(paste0(name, '_message')), style='color:red'),
 			fields,
-			footer = column(shiny::modalButton(label.cancel), # CANCEL
+			footer = shiny::column(shiny::modalButton(label.cancel), # CANCEL
 							shiny::actionButton(paste0(name, '_update'), label.save), #Save
 							width=12),
 			size = modal.size
@@ -488,7 +496,7 @@ dtedit <- function(input, output, name, thedata,
 
 	##### Delete functions #####################################################
 
-	observeEvent(input[[paste0(name, '_remove')]], {
+	shiny::observeEvent(input[[paste0(name, '_remove')]], {
 		row <- input[[paste0(name, 'dt_rows_selected')]]
 		if(!is.null(row)) {
 			if(row > 0) {
@@ -497,7 +505,7 @@ dtedit <- function(input, output, name, thedata,
 		}
 	})
 
-	observeEvent(input[[paste0(name, '_delete')]], {
+	shiny::observeEvent(input[[paste0(name, '_delete')]], {
 		row <- input[[paste0(name, 'dt_rows_selected')]]
 		if(!is.null(row)) {
 			if(row > 0) {
@@ -522,12 +530,12 @@ dtedit <- function(input, output, name, thedata,
 		# TODO - Put Description, no field names.
 		# TODO - Format Text
 		for(i in view.cols) {
-			fields[[i]] <- div(paste0(i, ' = ', result$thedata[row,i]))
+			fields[[i]] <- shiny::div(paste0(i, ' = ', result$thedata[row,i]))
 		}
 		shiny::modalDialog(title = title.delete,
 					shiny::p(title.delete.confirmation), # 'Are you sure you want to delete this record?'
 					fields,
-					footer = shiny::column(modalButton(label.cancel), #CANCEL
+					footer = shiny::column(shiny::modalButton(label.cancel), #CANCEL
 									shiny::actionButton(paste0(name, '_delete'), label.delete), # 'Delete'
 									width=12),
 					size = modal.size
@@ -535,16 +543,19 @@ dtedit <- function(input, output, name, thedata,
 	}
 
 	##### Build the UI for the DataTable and buttons ###########################
-
-	output[[name]] <- shiny::renderUI({
-		shiny::div(
-			if(show.insert) { shiny::actionButton(paste0(name, '_add'), label.add) },
-			if(show.update) { shiny::actionButton(paste0(name, '_edit'), label.edit) },
-			if(show.delete) { shiny::actionButton(paste0(name, '_remove'), label.delete) },
-			if(show.copy) { shiny::actionButton(paste0(name, '_copy'), label.copy) },
-			shiny::br(), shiny::br(), DT::dataTableOutput(DataTableName)
-		)
+  message("output[[name]]: ", name)
+	message('DataTableName',DataTableName)
+	tmpT <- shiny::renderUI({
+	  shiny::div(
+	    if(show.insert) { shiny::actionButton(paste0(name, '_add'), label.add) },
+	    if(show.update) { shiny::actionButton(paste0(name, '_edit'), label.edit) },
+	    if(show.delete) { shiny::actionButton(paste0(name, '_remove'), label.delete) },
+	    if(show.copy) { shiny::actionButton(paste0(name, '_copy'), label.copy) },
+	    shiny::br(), shiny::br(), DT::dataTableOutput(DataTableName)
+	  )
 	})
+
+	output[[name]] <- tmpT
 	
 	# for create
 	if (1==2) {
@@ -560,3 +571,6 @@ dtedit <- function(input, output, name, thedata,
 
 	return(result)
 }
+
+
+

@@ -2,3 +2,4 @@
 
 export(dtedit)
 export(dtedit_demo)
+export(version)

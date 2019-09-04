@@ -5,6 +5,8 @@ library(DTedit)
 ##### Load books data.frame as a SQLite database
 conn <- dbConnect(RSQLite::SQLite(), "books.sqlite")
 
+message("Dtedit Demo - V.", DTedit::version())
+
 if(!'books' %in% dbListTables(conn)) {
 	books <- read.csv('books.csv', stringsAsFactors = FALSE)
 	books$Authors <- strsplit(books$Authors, ';')
