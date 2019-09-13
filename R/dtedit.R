@@ -4,7 +4,7 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.20b'
+  res <- '0.0.20x'
   return(res)
 }
 
@@ -103,7 +103,7 @@ update.click <- NA
 #' @param datatable.options options passed to \code{\link{DT::renderDataTable}}.
 #'        See \link{https://rstudio.github.io/DT/options.html} for more information.
 #' @export
-dtedit <- function(input, output, name, thedata,
+dtedit2 <- function(input, output, name, thedata,
 				   view.cols = names(thedata),
 				   view.label.cols = view.cols,
 				   edit.cols = names(thedata),
@@ -142,7 +142,7 @@ dtedit <- function(input, output, name, thedata,
 				   click.time.threshold = 2, # in seconds
 				   datatable.options = list(pageLength=defaultPageLength)
 ) {
-  message("DtEdit Version:",version())
+  message("DtEdit2 Version:",version())
   message('data - format: ', date.format)
   message('Current namespace: ', getAnywhere('input')$where)
   message("the Data", thedata)

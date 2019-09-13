@@ -1,11 +1,11 @@
 library(shiny)
 library(RSQLite)
-library(DTedit)
+library(dtedit2)
 
 ##### Load books data.frame as a SQLite database
 conn <- dbConnect(RSQLite::SQLite(), "books.sqlite")
 
-message("Dtedit Demo - V.", DTedit::version())
+message("Dtedit2 Demo - V.", DTedit::version())
 
 if(!'books' %in% dbListTables(conn)) {
 	books <- read.csv('books.csv', stringsAsFactors = FALSE)
@@ -62,7 +62,7 @@ books.delete.callback <- function(data, row) {
 ##### Create the Shiny server
 server <- function(input, output) {
 	books <- getBooks()
-	dtedit(input, output,
+	dtedit2(input, output,
 		   name = 'books',
 		   thedata = books,
 		   edit.cols = c('Title', 'Authors', 'Date', 'Publisher'),
@@ -78,7 +78,7 @@ server <- function(input, output) {
 						Type = factor(levels=c('Admin', 'User')),
 						stringsAsFactors=FALSE)
 	names$Date <- as.Date(names$Date, origin='1970-01-01')
-	namesdt <- dtedit(input, output, name = 'names', names)
+	namesdt <- dtedit2(input, output, name = 'names', names)
 }
 
 ##### Create the shiny UI
