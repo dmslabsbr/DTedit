@@ -2,4 +2,6 @@
 
 export(dtedit2)
 export(dtedit_demo)
+export(getEnv)
+export(running)
 export(version)

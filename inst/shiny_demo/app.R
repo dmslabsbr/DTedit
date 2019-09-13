@@ -7,7 +7,7 @@ conn <- dbConnect(RSQLite::SQLite(), "books.sqlite")
 
 message("Dtedit2 Demo - V.", DTedit::version())
 
-if(!'books' %in% dbListTables(conn)) {
+if (!'books' %in% dbListTables(conn)) {
 	books <- read.csv('books.csv', stringsAsFactors = FALSE)
 	books$Authors <- strsplit(books$Authors, ';')
 	books$Authors <- lapply(books$Authors, trimws) # Strip white space

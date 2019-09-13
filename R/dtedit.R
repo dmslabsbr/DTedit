@@ -4,12 +4,52 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.20x'
+  res <- '0.0.20x5'
   return(res)
 }
 
+
 insert.click <- NA
 update.click <- NA
+
+pkg.env <- new.env(parent = emptyenv())
+pkg.env$books <- F
+pkg.env$names <- F
+
+
+#' Get current environment
+#'
+#' @return version
+#'
+#' @export
+getEnv <- function() {
+  return(pkg.env)
+}
+
+
+#' Return if \code{uiOutput(name)} is running
+#'
+#' @param name the name of the UI output.
+#' @return version
+#'
+#' @export
+running <- function(name = NULL) {
+  if (is.null(name)) return(ls(pkg.env))
+  dtname <- paste0(name, '_dt')
+  d.1 <- name
+  d.2 <- get0(name, pkg.env)
+  message('Datatablename (d1): ', d.1)
+  message('pkg.env (d2): ', d.2)
+  message('dtname: ', dtname)
+  if (is.null(d.2)) {
+    res <- FALSE
+  } else {
+    res <- (d.2 == TRUE)  
+  }
+  return(res)
+}
+
+
 
 
 #' Function to create a DataTable with Add, Edit, and Delete buttons.
@@ -145,7 +185,9 @@ dtedit2 <- function(input, output, name, thedata,
   message("DtEdit2 Version:",version())
   message('data - format: ', date.format)
   message('Current namespace: ', getAnywhere('input')$where)
+  message('- env: ',format(pkg.env))
   message("the Data", thedata)
+  
 	# Some basic parameter checking
 	if(!is.data.frame(thedata) | ncol(thedata) < 1) {
 		stop('Must provide a data frame with at least one column.')
@@ -545,6 +587,10 @@ dtedit2 <- function(input, output, name, thedata,
 	##### Build the UI for the DataTable and buttons ###########################
   message("output[[name]]: ", name)
 	message('DataTableName',DataTableName)
+	
+	assign(name, TRUE, pkg.env)
+	message('name: ', name)
+	
 	tmpT <- shiny::renderUI({
 	  shiny::div(
 	    if(show.insert) { shiny::actionButton(paste0(name, '_add'), label.add) },
@@ -558,12 +604,13 @@ dtedit2 <- function(input, output, name, thedata,
 	output[[name]] <- tmpT
 	
 	# for create
-	if (1==2) {
+	if (1 == 2) {
 	  # cmd clear and rebuild
 	  devtools::document()
 	  devtools::install()
 	  usethis::use_package_doc()
 	  devtools::document()
+	  shiny::runApp('inst/shiny_demo')
 	  devtools::build()
 	  devtools::build(binary = TRUE, args = c('--preclean'))
 	  
