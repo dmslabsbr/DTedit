@@ -4,7 +4,7 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.20x5'
+  res <- '0.0.20x8'
   return(res)
 }
 
@@ -39,8 +39,8 @@ running <- function(name = NULL) {
   d.1 <- name
   d.2 <- get0(name, pkg.env)
   message('Datatablename (d1): ', d.1)
-  message('pkg.env (d2): ', d.2)
-  message('dtname: ', dtname)
+  message('pkg.env       (d2): ', d.2)
+  message('dtname            : ', dtname)
   if (is.null(d.2)) {
     res <- FALSE
   } else {
@@ -180,13 +180,14 @@ dtedit2 <- function(input, output, name, thedata,
 				   callback.update = function(data, olddata, row) { },
 				   callback.insert = function(data, row) { },
 				   click.time.threshold = 2, # in seconds
-				   datatable.options = list(pageLength=defaultPageLength)
+				   datatable.options = list(pageLength = defaultPageLength)
 ) {
-  message("DtEdit2 Version:",version())
-  message('data - format: ', date.format)
-  message('Current namespace: ', getAnywhere('input')$where)
-  message('- env: ',format(pkg.env))
-  message("the Data", thedata)
+  message("* DtEdit2 Version  : ",version())
+  message('- data - format    : ', date.format)
+  message('- Current namespace: ', getAnywhere('input')$where)
+  message('- env              : ',format(pkg.env))
+  message('- running          : ', running(name))
+  message("- the Data: ", thedata)
   
 	# Some basic parameter checking
 	if(!is.data.frame(thedata) | ncol(thedata) < 1) {
@@ -270,7 +271,7 @@ dtedit2 <- function(input, output, name, thedata,
 				value <- ifelse(missing(values),
 								as.character(Sys.Date()),
 								as.character(values[,edit.cols[i]]))
-				fields[[i]] <- dateInput(paste0(name, typeName, edit.cols[i]),
+				fields[[i]] <- shiny::dateInput(paste0(name, typeName, edit.cols[i]),
 										 label=edit.label.cols[i],
 										 value=value,
 										 format=date.format,
@@ -349,6 +350,12 @@ dtedit2 <- function(input, output, name, thedata,
 		DT::replaceData(proxy, data, ...)
 	}
 
+	updateDados <- function(novosDados) {
+	  updateData(dt.proxy,
+	             novosDados[,view.cols],
+	             rownames = FALSE)
+	}
+	
 	
 	# check required fields
   checkReq <- function(input, tag) {
@@ -586,10 +593,12 @@ dtedit2 <- function(input, output, name, thedata,
 
 	##### Build the UI for the DataTable and buttons ###########################
   message("output[[name]]: ", name)
-	message('DataTableName',DataTableName)
+	message('DataTableName: ',DataTableName)
+	message('name: ', name)
+	message('- name-dt: ', get0(name, pkg.env))
 	
 	assign(name, TRUE, pkg.env)
-	message('name: ', name)
+	message('- name-dt: ', get0(name, pkg.env))
 	
 	tmpT <- shiny::renderUI({
 	  shiny::div(
@@ -613,7 +622,6 @@ dtedit2 <- function(input, output, name, thedata,
 	  shiny::runApp('inst/shiny_demo')
 	  devtools::build()
 	  devtools::build(binary = TRUE, args = c('--preclean'))
-	  
 	}
 
 	return(result)
