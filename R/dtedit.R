@@ -4,11 +4,23 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.20x8'
+  res <- '0.0.20x14'
   return(res)
 }
 
 
+#' @export
+controlador <- shiny::reactiveValues(data = NULL, ui_name = NULL)
+
+
+#' @export
+updateDados <- function(dados = NULL, ui_name = NULL) {
+  controlador$data <- dados
+  controlador$ui_name <- ui_name
+  return(TRUE)
+}
+
+#' @export
 insert.click <- NA
 update.click <- NA
 
@@ -48,8 +60,6 @@ running <- function(name = NULL) {
   }
   return(res)
 }
-
-
 
 
 #' Function to create a DataTable with Add, Edit, and Delete buttons.
@@ -188,6 +198,9 @@ dtedit2 <- function(input, output, name, thedata,
   message('- env              : ',format(pkg.env))
   message('- running          : ', running(name))
   message("- the Data: ", thedata)
+  
+  message('values: ', (isolate(print(reactiveValuesToList(input)))))
+  message('outs: ', print(shiny::outputOptions(output)))
   
 	# Some basic parameter checking
 	if(!is.data.frame(thedata) | ncol(thedata) < 1) {
@@ -350,11 +363,16 @@ dtedit2 <- function(input, output, name, thedata,
 		DT::replaceData(proxy, data, ...)
 	}
 
-	updateDados <- function(novosDados) {
-	  updateData(dt.proxy,
-	             novosDados[,view.cols],
-	             rownames = FALSE)
-	}
+	shiny::observe({
+
+    message('Controlador: ', controlador$data, '  ui_name: ', controlador$ui_name)
+	  
+	  if (!is.null(controlador$data)) {
+	    updateData(dt.proxy,
+	               controlador$data[,view.cols],
+	               rownames = FALSE) 
+	  }
+  })
 	
 	
 	# check required fields
@@ -372,7 +390,7 @@ dtedit2 <- function(input, output, name, thedata,
         }
       }
     }
-    return (lack)
+    return(lack)
   }	
 	
 	##### Insert functions #####################################################
