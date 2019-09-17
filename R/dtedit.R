@@ -4,7 +4,7 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.20x14'
+  res <- '0.0.20x16'
   return(res)
 }
 
@@ -60,6 +60,26 @@ running <- function(name = NULL) {
   }
   return(res)
 }
+
+# check dtedit2 parameters
+dataCheck <- function(thedata, edit.cols, edit.label.cols, view.cols, view.label.cols, edit.require.cols) {
+  if (!is.data.frame(thedata) | ncol(thedata) < 1) {
+    stop('Must provide a data frame with at least one column.')
+  } else if (length(edit.cols) != length(edit.label.cols)) {
+    stop('edit.cols and edit.label.cols must be the same length.')
+  } else if (length(view.cols) != length(view.label.cols)) {
+    stop('view.cols and view.label.cols must be the same length.')
+  } else if (!all(view.cols %in% names(thedata))) {
+    stop('Not all view.cols are in the data.')
+  } else if (!all(edit.cols %in% names(thedata))) {
+    stop('Not all edit.cols are in the data.')
+  }
+  if (!all(edit.require.cols %in% names(thedata))) {
+    stop('a edit.require.cols not in the data')
+  }
+}
+
+
 
 
 #' Function to create a DataTable with Add, Edit, and Delete buttons.
@@ -199,26 +219,12 @@ dtedit2 <- function(input, output, name, thedata,
   message('- running          : ', running(name))
   message("- the Data: ", thedata)
   
-  message('values: ', (isolate(print(reactiveValuesToList(input)))))
-  message('outs: ', print(shiny::outputOptions(output)))
+  #message('values: ', (isolate(print(reactiveValuesToList(input)))))
+  #message('outs: ', print(shiny::outputOptions(output)))
   
 	# Some basic parameter checking
-	if(!is.data.frame(thedata) | ncol(thedata) < 1) {
-		stop('Must provide a data frame with at least one column.')
-	} else if(length(edit.cols) != length(edit.label.cols)) {
-		stop('edit.cols and edit.label.cols must be the same length.')
-	} else if(length(view.cols) != length(view.label.cols)) {
-	    stop('view.cols and view.label.cols must be the same length.')
-	} else if(!all(view.cols %in% names(thedata))) {
-		stop('Not all view.cols are in the data.')
-	} else if(!all(edit.cols %in% names(thedata))) {
-		stop('Not all edit.cols are in the data.')
-	}
+  dataCheck(thedata, edit.cols, edit.label.cols, view.cols, view.label.cols, edit.require.cols)
 
-  if(!all(edit.require.cols %in% names(thedata))) {
-    stop('a edit.require.cols not in the data')
-  }
-  
 	DataTableName <- paste0(name, 'dt')
 	
 	message('name: ', DataTableName)
@@ -630,19 +636,20 @@ dtedit2 <- function(input, output, name, thedata,
 
 	output[[name]] <- tmpT
 	
-	# for create
-	if (1 == 2) {
-	  # cmd clear and rebuild
-	  devtools::document()
-	  devtools::install()
-	  usethis::use_package_doc()
-	  devtools::document()
-	  shiny::runApp('inst/shiny_demo')
-	  devtools::build()
-	  devtools::build(binary = TRUE, args = c('--preclean'))
-	}
-
 	return(result)
+}
+
+# internal functions
+
+nothing <- function() {
+  # cmd clear and rebuild
+  devtools::document()
+  devtools::install()
+  usethis::use_package_doc()
+  devtools::document()
+  shiny::runApp('inst/shiny_demo')
+  devtools::build()
+  devtools::build(binary = TRUE, args = c('--preclean'))
 }
 
 
