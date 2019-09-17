@@ -4,7 +4,7 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.20x16'
+  res <- '0.0.20x19'
   return(res)
 }
 
@@ -79,6 +79,187 @@ dataCheck <- function(thedata, edit.cols, edit.label.cols, view.cols, view.label
   }
 }
 
+
+# Convert any list columns to characters before displaying
+list2char <- function(thedata) {
+  for (i in 1:ncol(thedata)) {
+    if (nrow(thedata) == 0) {
+      thedata[,i] <- character()
+    } else if (is.list(thedata[,i])) {
+      thedata[,i] <- sapply(thedata[,i], FUN = function(x) { paste0(x, collapse = ', ') })
+    }
+  }
+  return(thedata)
+}
+
+valid.input.types <- c('dateInput', 'selectInput', 'numericInput',
+                       'textInput', 'textAreaInput', 'passwordInput', 'selectInputMultiple')
+
+
+# correct inputTypes
+inputTypes.go <- function(thedata, edit.cols, input.types ) {
+  
+  inputTypes <- sapply(thedata[,edit.cols], FUN=function(x) {
+    switch(class(x),
+           list = 'selectInputMultiple',
+           character = 'textInput',
+           Date = 'dateInput',
+           factor = 'selectInput',
+           integer = 'numericInput',
+           numeric = 'numericInput')
+  })
+  
+  if(!missing(input.types)) {
+    if(!all(names(input.types) %in% edit.cols)) {
+      stop('input.types column not a valid editting column: ',
+           paste0(names(input.types)[!names(input.types) %in% edit.cols]))
+    }
+    if(!all(input.types %in% valid.input.types)) {
+      stop(paste0('input.types must only contain values of: ',
+                  paste0(valid.input.types, collapse = ', ')))
+    }
+    inputTypes[names(input.types)] <- input.types
+  }
+  return (inputTypes)
+  
+}
+
+selectInputMultiple <- function(selectize, ...) {
+  shiny::selectInput(multiple = TRUE, selectize = selectize, ...)
+}
+
+
+# get fields data
+getFields <- function(typeName, values,
+                      edit.cols, edit.require.cols,
+                      edit.label.cols, inputTypes, name, 
+                      date.format, date.width, input.choices,
+                      select.width, result, numeric.width,
+                      textarea.width, textarea.height, text.width,
+                      selectize) {
+  fields <- list()
+  for(i in seq_along(edit.cols)) {
+    if (all(edit.cols[i] %in% edit.require.cols)) {
+      # TODO - show * in red.
+      edit.label.cols[i] <- paste0(edit.label.cols[i],'(*)')
+      #edit.label.cols[i] <- paste0(edit.label.cols[i], tags$strong(style='color:FF0000','(*)'))
+      message('n*: ', edit.label.cols[i])
+    }
+    if(inputTypes[i] == 'dateInput') {
+      value <- ifelse(missing(values),
+                      as.character(Sys.Date()),
+                      as.character(values[,edit.cols[i]]))
+      fields[[i]] <- shiny::dateInput(paste0(name, typeName, edit.cols[i]),
+                                      label=edit.label.cols[i],
+                                      value=value,
+                                      format=date.format,
+                                      width=date.width)
+    } else if(inputTypes[i] == 'selectInputMultiple') {
+      value <- ifelse(missing(values), '', values[,edit.cols[i]])
+      if(is.list(value)) {
+        value <- value[[1]]
+      }
+      choices <- ''
+      if(!missing(values)) {
+        choices <- unique(unlist(values[,edit.cols[i]]))
+      }
+      if(!is.null(input.choices)) {
+        if(edit.cols[i] %in% names(input.choices)) {
+          choices <- input.choices[[edit.cols[i]]]
+        }
+      }
+      if(length(choices) == 1 & choices == '') {
+        warning(paste0('No choices available for ', edit.cols[i],
+                       '. Specify them using the input.choices parameter'))
+      }
+      fields[[i]] <- selectInputMultiple(selectize, 
+                                         paste0(name, typeName, edit.cols[i]),
+                                         label=edit.label.cols[i],
+                                         choices=choices,
+                                         selected=value,
+                                         width=select.width)
+      
+    } else if(inputTypes[i] == 'selectInput') {
+      value <- ifelse(missing(values), '', as.character(values[,edit.cols[i]]))
+      fields[[i]] <- shiny::selectInput(paste0(name, typeName, edit.cols[i]),
+                                        label=edit.label.cols[i],
+                                        choices=levels(result$thedata[,edit.cols[i]]),
+                                        selected=value,
+                                        width=select.width)
+    } else if(inputTypes[i] == 'numericInput') {
+      value <- ifelse(missing(values), 0, values[,edit.cols[i]])
+      fields[[i]] <- shiny::numericInput(paste0(name, typeName, edit.cols[i]),
+                                         label=edit.label.cols[i],
+                                         value=value,
+                                         width=numeric.width)
+    } else if(inputTypes[i] == 'textAreaInput') {
+      value <- ifelse(missing(values), '', values[,edit.cols[i]])
+      fields[[i]] <- shiny::textAreaInput(paste0(name, typeName, edit.cols[i]),
+                                          label=edit.label.cols[i],
+                                          value=value,
+                                          width=textarea.width, height=textarea.height)
+    } else if(inputTypes[i] == 'textInput') {
+      value <- ifelse(missing(values), '', values[,edit.cols[i]])
+      fields[[i]] <- shiny::textInput(paste0(name, typeName, edit.cols[i]),
+                                      label=edit.label.cols[i],
+                                      value=value,
+                                      width=text.width)
+    } else if(inputTypes[i] == 'passwordInput') {
+      value <- ifelse(missing(values), '', values[,edit.cols[i]])
+      fields[[i]] <- shiny::passwordInput(paste0(name, typeName, edit.cols[i]),
+                                          label=edit.label.cols[i],
+                                          value=value,
+                                          width=text.width)
+    } else {
+      stop('Invalid input type!')
+    }
+  }
+  return(fields)
+}
+
+# check required fields
+checkReq <- function(input, tag, 
+                     name, edit.require.cols, edit.label.cols, edit.cols) {
+  lReq <- list() # TODO future use for color require fields
+  lack <- c()
+  for(i in edit.cols) {
+    input_add <- input[[paste0(name, tag, i)]]
+    lReq[i] <- TRUE
+    if (all(i %in% edit.require.cols)) {
+      if (is.null(input_add) || identical(input_add,'') ) {
+        lReq[i] <- FALSE
+        elem <- edit.label.cols[grep(paste0(i),edit.cols)]
+        lack <- c(lack,paste0(elem))
+      }
+    }
+  }
+  return(lack)
+}	
+
+
+##### Build the UI for the DataTable and buttons ###########################
+build.ui <- function(name, DataTableName, 
+                     show.insert, show.update, show.delete, show.copy,
+                     label.add, label.edit, label.delete, label.copy ) {
+  message("output[[name]]: ", name)
+  message('DataTableName: ',DataTableName)
+  message('name: ', name)
+  message('- name-dt: ', get0(name, pkg.env))
+  
+  assign(name, TRUE, pkg.env)
+  message('- name-dt: ', get0(name, pkg.env))
+  
+  tmpT <- shiny::renderUI({
+    shiny::div(
+      if(show.insert) { shiny::actionButton(paste0(name, '_add'), label.add) },
+      if(show.update) { shiny::actionButton(paste0(name, '_edit'), label.edit) },
+      if(show.delete) { shiny::actionButton(paste0(name, '_remove'), label.delete) },
+      if(show.copy) { shiny::actionButton(paste0(name, '_copy'), label.copy) },
+      shiny::br(), shiny::br(), DT::dataTableOutput(DataTableName)
+    )
+  })
+  return (tmpT)
+}
 
 
 
@@ -237,128 +418,27 @@ dtedit2 <- function(input, output, name, thedata,
 
 	dt.proxy <- DT::dataTableProxy(DataTableName)
 
-	selectInputMultiple <- function(...) {
-		shiny::selectInput(multiple = TRUE, selectize = selectize, ...)
-	}
 
-	valid.input.types <- c('dateInput', 'selectInput', 'numericInput',
-						   'textInput', 'textAreaInput', 'passwordInput', 'selectInputMultiple')
-	inputTypes <- sapply(thedata[,edit.cols], FUN=function(x) {
-		switch(class(x),
-			   list = 'selectInputMultiple',
-			   character = 'textInput',
-			   Date = 'dateInput',
-			   factor = 'selectInput',
-			   integer = 'numericInput',
-			   numeric = 'numericInput')
-	})
-	if(!missing(input.types)) {
-		if(!all(names(input.types) %in% edit.cols)) {
-			stop('input.types column not a valid editting column: ',
-				 paste0(names(input.types)[!names(input.types) %in% edit.cols]))
-		}
-		if(!all(input.types %in% valid.input.types)) {
-			stop(paste0('input.types must only contain values of: ',
-						paste0(valid.input.types, collapse = ', ')))
-		}
-		inputTypes[names(input.types)] <- input.types
-	}
+	#put correct inputTypes
+	inputTypes <- inputTypes.go(thedata, edit.cols, input.types)
 
 	# Convert any list columns to characters before displaying
-	for(i in 1:ncol(thedata)) {
-		if(nrow(thedata) == 0) {
-			thedata[,i] <- character()
-		} else if(is.list(thedata[,i])) {
-			thedata[,i] <- sapply(thedata[,i], FUN = function(x) { paste0(x, collapse = ', ') })
-		}
-	}
+  thedata <- list2char(thedata)
 
 	output[[DataTableName]] <- DT::renderDataTable({
 		thedata[,view.cols]
 	}, options = datatable.options, server=TRUE, selection='single', rownames=FALSE, colnames = view.label.cols )
 
-	getFields <- function(typeName, values) {
-		fields <- list()
-		for(i in seq_along(edit.cols)) {
-		  if (all(edit.cols[i] %in% edit.require.cols)) {
-		    # TODO - show * in red.
-		    edit.label.cols[i] <- paste0(edit.label.cols[i],'(*)')
-		    #edit.label.cols[i] <- paste0(edit.label.cols[i], tags$strong(style='color:FF0000','(*)'))
-		    message('n*: ', edit.label.cols[i])
-		  }
-			if(inputTypes[i] == 'dateInput') {
-				value <- ifelse(missing(values),
-								as.character(Sys.Date()),
-								as.character(values[,edit.cols[i]]))
-				fields[[i]] <- shiny::dateInput(paste0(name, typeName, edit.cols[i]),
-										 label=edit.label.cols[i],
-										 value=value,
-										 format=date.format,
-										 width=date.width)
-			} else if(inputTypes[i] == 'selectInputMultiple') {
-				value <- ifelse(missing(values), '', values[,edit.cols[i]])
-				if(is.list(value)) {
-					value <- value[[1]]
-				}
-				choices <- ''
-				if(!missing(values)) {
-					choices <- unique(unlist(values[,edit.cols[i]]))
-				}
-				if(!is.null(input.choices)) {
-					if(edit.cols[i] %in% names(input.choices)) {
-						choices <- input.choices[[edit.cols[i]]]
-					}
-				}
-				if(length(choices) == 1 & choices == '') {
-					warning(paste0('No choices available for ', edit.cols[i],
-								   '. Specify them using the input.choices parameter'))
-				}
-				fields[[i]] <- selectInputMultiple(paste0(name, typeName, edit.cols[i]),
-										   label=edit.label.cols[i],
-										   choices=choices,
-										   selected=value,
-										   width=select.width)
-
-			} else if(inputTypes[i] == 'selectInput') {
-				value <- ifelse(missing(values), '', as.character(values[,edit.cols[i]]))
-				fields[[i]] <- shiny::selectInput(paste0(name, typeName, edit.cols[i]),
-										   label=edit.label.cols[i],
-										   choices=levels(result$thedata[,edit.cols[i]]),
-										   selected=value,
-										   width=select.width)
-			} else if(inputTypes[i] == 'numericInput') {
-				value <- ifelse(missing(values), 0, values[,edit.cols[i]])
-				fields[[i]] <- shiny::numericInput(paste0(name, typeName, edit.cols[i]),
-											label=edit.label.cols[i],
-											value=value,
-											width=numeric.width)
-			} else if(inputTypes[i] == 'textAreaInput') {
-				value <- ifelse(missing(values), '', values[,edit.cols[i]])
-				fields[[i]] <- shiny::textAreaInput(paste0(name, typeName, edit.cols[i]),
-											 label=edit.label.cols[i],
-											 value=value,
-											 width=textarea.width, height=textarea.height)
-			} else if(inputTypes[i] == 'textInput') {
-				value <- ifelse(missing(values), '', values[,edit.cols[i]])
-				fields[[i]] <- shiny::textInput(paste0(name, typeName, edit.cols[i]),
-										 label=edit.label.cols[i],
-										 value=value,
-										 width=text.width)
-			} else if(inputTypes[i] == 'passwordInput') {
-				value <- ifelse(missing(values), '', values[,edit.cols[i]])
-				fields[[i]] <- shiny::passwordInput(paste0(name, typeName, edit.cols[i]),
-										 label=edit.label.cols[i],
-										 value=value,
-										 width=text.width)
-			} else {
-				stop('Invalid input type!')
-			}
-		}
-		return(fields)
-	}
 
 	output[[paste0(name, '_message')]] <- shiny::renderText('')
 
+	##### Build the UI for the DataTable and buttons ###########################
+	output[[name]] <- build.ui(name, DataTableName, 
+	                           show.insert, show.update, show.delete, show.copy,
+	                           label.add, label.edit, label.delete, label.copy )
+	
+	
+	
 	updateData <- function(proxy, data, ...) {
 		# Convert any list columns to characters before displaying
 		for(i in 1:ncol(data)) {
@@ -374,30 +454,33 @@ dtedit2 <- function(input, output, name, thedata,
     message('Controlador: ', controlador$data, '  ui_name: ', controlador$ui_name)
 	  
 	  if (!is.null(controlador$data)) {
-	    updateData(dt.proxy,
-	               controlador$data[,view.cols],
-	               rownames = FALSE) 
+	   # updateData(dt.proxy,
+	   #            controlador$data[,view.cols],
+	   #            rownames = FALSE) 
 	  }
   })
 	
 	
-	# check required fields
-  checkReq <- function(input, tag) {
-    lReq <- list() # TODO future use for color require fields
-    lack <- c()
-    for(i in edit.cols) {
-      input_add <- input[[paste0(name, tag, i)]]
-      lReq[i] <- TRUE
-      if (all(i %in% edit.require.cols)) {
-        if (is.null(input_add) || identical(input_add,'') ) {
-          lReq[i] <- FALSE
-          elem <- edit.label.cols[grep(paste0(i),edit.cols)]
-          lack <- c(lack,paste0(elem))
-        }
-      }
-    }
-    return(lack)
-  }	
+	addModal <- function(row, values) {
+
+	  output[[paste0(name, '_message')]] <- shiny::renderText('')
+	  fields <- getFields('_add_', values,
+	                      edit.cols, edit.require.cols,
+	                      edit.label.cols, inputTypes, name, 
+	                      date.format, date.width, input.choices,
+	                      select.width, result, numeric.width,
+	                      textarea.width, textarea.height, text.width,
+	                      selectize)
+	  shiny::modalDialog(title = title.add,
+	                     shiny::div(shiny::textOutput(paste0(name, '_message')), style='color:red'),
+	                     fields,
+	                     footer = shiny::column(shiny::modalButton(label.cancel), #'Cancel'
+	                                            shiny::actionButton(paste0(name, '_insert'), label.save), #'Save'
+	                                            width=12),
+	                     size = modal.size
+	  )
+	}
+	
 	
 	##### Insert functions #####################################################
 
@@ -424,11 +507,11 @@ dtedit2 <- function(input, output, name, thedata,
 		newdata[row,] <- NA
 		lReq <- list() # TODO future use
 		lack <- c()
-		lack <- checkReq(input,'_add_')
+		lack <- checkReq(input,'_add_',
+		                 name, edit.require.cols, edit.label.cols, edit.cols)
 		lReq <- (length(lack)==0)
 		for(i in edit.cols) {
 		  input_add <- input[[paste0(name, '_add_', i)]]
-		  #message('inputTypes[i]: ',inputTypes[i])
 			if(inputTypes[i] %in% c('selectInputMultiple')) {
 				newdata[[i]][row] <- list(input[[paste0(name, '_add_', i)]])
 			} else {
@@ -461,19 +544,6 @@ dtedit2 <- function(input, output, name, thedata,
 		})
 	})
 
-	addModal <- function(row, values) {
-		output[[paste0(name, '_message')]] <- shiny::renderText('')
-		fields <- getFields('_add_', values)
-		shiny::modalDialog(title = title.add,
-					shiny::div(shiny::textOutput(paste0(name, '_message')), style='color:red'),
-					fields,
-					footer = shiny::column(shiny::modalButton(label.cancel), #'Cancel'
-									shiny::actionButton(paste0(name, '_insert'), label.save), #'Save'
-									width=12),
-					size = modal.size
-		)
-	}
-
 	##### Copy functions #######################################################
 
 	shiny::observeEvent(input[[paste0(name, '_copy')]], {
@@ -487,6 +557,25 @@ dtedit2 <- function(input, output, name, thedata,
 
 	##### Update functions #####################################################
 
+  editModal <- function(row) {
+    output[[paste0(name, '_message')]] <- shiny::renderText('')
+    fields <- getFields('_edit_', values=result$thedata[row,],
+                        edit.cols, edit.require.cols,
+                        edit.label.cols, inputTypes, name, 
+                        date.format, date.width, input.choices,
+                        select.width, result, numeric.width,
+                        textarea.width, textarea.height, text.width,
+                        selectize)
+    shiny::modalDialog(title = title.edit,
+                       shiny::div(shiny::textOutput(paste0(name, '_message')), style='color:red'),
+                       fields,
+                       footer = shiny::column(shiny::modalButton(label.cancel), # CANCEL
+                                              shiny::actionButton(paste0(name, '_update'), label.save), #Save
+                                              width=12),
+                       size = modal.size
+    )
+  }
+  
 	shiny::observeEvent(input[[paste0(name, '_edit')]], {
 		row <- input[[paste0(name, 'dt_rows_selected')]]
 		if(!is.null(row)) {
@@ -495,7 +584,6 @@ dtedit2 <- function(input, output, name, thedata,
 			}
 		}
 	})
-
 
 
 	shiny::observeEvent(input[[paste0(name, '_update')]], {
@@ -515,7 +603,8 @@ dtedit2 <- function(input, output, name, thedata,
 				# by dms
 				lReq <- list() # TODO future use
 				lack <- c()
-				lack <- checkReq(input, '_edit_')
+				lack <- checkReq(input, '_edit_',
+				                 name, edit.require.cols, edit.label.cols, edit.cols)
 				lReq <- (length(lack)==0)
 				for(i in edit.cols) {
 					if(inputTypes[i] %in% c('selectInputMultiple')) {
@@ -554,21 +643,27 @@ dtedit2 <- function(input, output, name, thedata,
 		return(FALSE)
 	})
 
-	editModal <- function(row) {
-		output[[paste0(name, '_message')]] <- shiny::renderText('')
-		fields <- getFields('_edit_', values=result$thedata[row,])
-		shiny::modalDialog(title = title.edit,
-			shiny::div(shiny::textOutput(paste0(name, '_message')), style='color:red'),
-			fields,
-			footer = shiny::column(shiny::modalButton(label.cancel), # CANCEL
-							shiny::actionButton(paste0(name, '_update'), label.save), #Save
-							width=12),
-			size = modal.size
-		)
-	}
 
 	##### Delete functions #####################################################
 
+
+	deleteModal <- function(row) {
+	  fields <- list()
+	  # TODO - Put Description, no field names.
+	  # TODO - Format Text
+	  for(i in view.cols) {
+	    fields[[i]] <- shiny::div(paste0(i, ' = ', result$thedata[row,i]))
+	  }
+	  shiny::modalDialog(title = title.delete,
+	                     shiny::p(title.delete.confirmation), # 'Are you sure you want to delete this record?'
+	                     fields,
+	                     footer = shiny::column(shiny::modalButton(label.cancel), #CANCEL
+	                                            shiny::actionButton(paste0(name, '_delete'), label.delete), # 'Delete'
+	                                            width=12),
+	                     size = modal.size
+	  )
+	}
+	
 	shiny::observeEvent(input[[paste0(name, '_remove')]], {
 		row <- input[[paste0(name, 'dt_rows_selected')]]
 		if(!is.null(row)) {
@@ -598,43 +693,7 @@ dtedit2 <- function(input, output, name, thedata,
 		return(FALSE)
 	})
 
-	deleteModal <- function(row) {
-		fields <- list()
-		# TODO - Put Description, no field names.
-		# TODO - Format Text
-		for(i in view.cols) {
-			fields[[i]] <- shiny::div(paste0(i, ' = ', result$thedata[row,i]))
-		}
-		shiny::modalDialog(title = title.delete,
-					shiny::p(title.delete.confirmation), # 'Are you sure you want to delete this record?'
-					fields,
-					footer = shiny::column(shiny::modalButton(label.cancel), #CANCEL
-									shiny::actionButton(paste0(name, '_delete'), label.delete), # 'Delete'
-									width=12),
-					size = modal.size
-		)
-	}
 
-	##### Build the UI for the DataTable and buttons ###########################
-  message("output[[name]]: ", name)
-	message('DataTableName: ',DataTableName)
-	message('name: ', name)
-	message('- name-dt: ', get0(name, pkg.env))
-	
-	assign(name, TRUE, pkg.env)
-	message('- name-dt: ', get0(name, pkg.env))
-	
-	tmpT <- shiny::renderUI({
-	  shiny::div(
-	    if(show.insert) { shiny::actionButton(paste0(name, '_add'), label.add) },
-	    if(show.update) { shiny::actionButton(paste0(name, '_edit'), label.edit) },
-	    if(show.delete) { shiny::actionButton(paste0(name, '_remove'), label.delete) },
-	    if(show.copy) { shiny::actionButton(paste0(name, '_copy'), label.copy) },
-	    shiny::br(), shiny::br(), DT::dataTableOutput(DataTableName)
-	  )
-	})
-
-	output[[name]] <- tmpT
 	
 	return(result)
 }
@@ -647,7 +706,7 @@ nothing <- function() {
   devtools::install()
   usethis::use_package_doc()
   devtools::document()
-  shiny::runApp('inst/shiny_demo')
+  shiny::runApp('inst/shiny_demo/app-tst.R')
   devtools::build()
   devtools::build(binary = TRUE, args = c('--preclean'))
 }
