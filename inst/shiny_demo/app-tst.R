@@ -62,9 +62,9 @@ books.delete.callback <- function(data, row) {
 ##### Create the Shiny server
 server <- function(input, output, session) {
 	books <- getBooks()
-	shiny::observe(print(shiny::reactiveValuesToList(input)) )
 	
-	message('outs: ', print(shiny::outputOptions(output)))
+	#shiny::observe(print(shiny::reactiveValuesToList(input)) )
+	#message('outs: ', print(shiny::outputOptions(output)))
 	
 	shiny::observeEvent(input$btn, {
 
@@ -83,22 +83,21 @@ server <- function(input, output, session) {
 	  
 	})
 	
-	shiny::observeEvent(input$btn2, {
-	  message('outs: ', print(shiny::outputOptions(output)))
-	  shiny::isolate(print(shiny::reactiveValuesToList(input)))
-	  dtedit2::updateDados('teste','ui_name')
-	  browser()
-	})
-	
-
-
 	names <- data.frame(Name=character(), Email=character(), Date=numeric(),
 						Type = factor(levels=c('Admin', 'User')),
 						stringsAsFactors=FALSE)
 	names$Date <- as.Date(names$Date, origin='1970-01-01')
-	namesdt <- 	dtedit2::dtedit2(input, output, name = 'names', names)
+	namesdt <- 	dtedit2::dtedit2(input, output, name = 'names', names, input.types =  c(Name='textInput'))
 	
+	shiny::observeEvent(input$btn2, {
+	  #message('outs: ', print(shiny::outputOptions(output)))
+	  browser()
+	  message('observe event click btn2')
+	  #shiny::isolate(print(shiny::reactiveValuesToList(input)))
+	  dtedit2::updateDados(head(books,3),'books')
+	})
 	
+		
 }
 
 ##### Create the shiny UI

@@ -11,6 +11,7 @@ version <- function() {
 
 #' @export
 controlador <- shiny::reactiveValues(data = NULL, ui_name = NULL)
+savePar <- shiny::reactiveValues(param = list())
 
 
 #' @export
@@ -91,6 +92,8 @@ list2char <- function(thedata) {
   }
   return(thedata)
 }
+
+
 
 valid.input.types <- c('dateInput', 'selectInput', 'numericInput',
                        'textInput', 'textAreaInput', 'passwordInput', 'selectInputMultiple')
@@ -181,11 +184,13 @@ getFields <- function(typeName, values,
       
     } else if(inputTypes[i] == 'selectInput') {
       value <- ifelse(missing(values), '', as.character(values[,edit.cols[i]]))
-      fields[[i]] <- shiny::selectInput(paste0(name, typeName, edit.cols[i]),
-                                        label=edit.label.cols[i],
-                                        choices=levels(result$thedata[,edit.cols[i]]),
-                                        selected=value,
-                                        width=select.width)
+      shiny::isolate({
+        fields[[i]] <- shiny::selectInput(paste0(name, typeName, edit.cols[i]),
+                                          label=edit.label.cols[i],
+                                          choices=levels(result$thedata[,edit.cols[i]]),
+                                          selected=value,
+                                          width=select.width)
+      })
     } else if(inputTypes[i] == 'numericInput') {
       value <- ifelse(missing(values), 0, values[,edit.cols[i]])
       fields[[i]] <- shiny::numericInput(paste0(name, typeName, edit.cols[i]),
@@ -361,7 +366,7 @@ dtedit2 <- function(input, output, name, thedata,
 				   edit.label.cols = edit.cols,
 				   edit.require.cols = NULL,
 				   edit.require.label = 'The following fields are required: ',
-				   input.types,
+				   input.types = c(),  # test
 				   input.choices = NULL,
 				   selectize = TRUE,
 				   modal.size = 'm',
@@ -400,22 +405,159 @@ dtedit2 <- function(input, output, name, thedata,
   message('- running          : ', running(name))
   message("- the Data: ", thedata)
   
+  lst_param <- list(
+    input = input, output = output, name = name,
+    view.cols = view.cols,
+    view.label.cols = view.label.cols,
+    edit.cols = edit.cols,
+    edit.label.cols = edit.label.cols,
+    edit.require.cols =  edit.require.cols,
+    edit.require.label = edit.require.label,
+    input.types = input.types,
+    input.choices = input.choices,
+    selectize = selectize,
+    modal.size = modal.size,
+    text.width = text.width,
+    textarea.width = textarea.width,
+    textarea.height = textarea.height,
+    date.width = date.width,
+    date.format = date.format,
+    numeric.width = numeric.width,
+    select.width = select.width,
+    defaultPageLength = defaultPageLength,
+    title.delete = title.delete,
+    title.delete.confirmation = title.delete.confirmation,
+    title.edit = title.edit,
+    title.add = title.add ,
+    label.delete = label.delete,
+    label.edit = label.edit,
+    label.add = label.add,
+    label.copy = label.copy,
+    label.cancel = label.cancel,
+    label.save = label.save,
+    show.delete = show.delete,
+    show.update = show.update,
+    show.insert = show.insert,
+    show.copy = show.copy,
+    callback.delete = callback.delete,
+    callback.update = callback.update,
+    callback.insert = callback.insert,
+    click.time.threshold = click.time.threshold, 
+    datatable.options = datatable.options
+  )
+  
+  shiny::isolate({ 
+    savePar$param[[paste0(name)]] <- lst_param
+  })
+  
+  
   #message('values: ', (isolate(print(reactiveValuesToList(input)))))
   #message('outs: ', print(shiny::outputOptions(output)))
+  
+  # internal functions
+  
+  updateData <- function(proxy, data, ...) {
+    # Convert any list columns to characters before displaying
+    for(i in 1:ncol(data)) {
+      if(is.list(data[,i])) {
+        data[,i] <- sapply(data[,i], FUN = function(x) { paste0(x, collapse = ', ') })
+      }
+    }
+    DT::replaceData(proxy, data, ...)
+  }
+  
   
 	# Some basic parameter checking
   dataCheck(thedata, edit.cols, edit.label.cols, view.cols, view.label.cols, edit.require.cols)
 
+  shiny::observe({
+    message('Controlador: ', controlador$data, '  ui_name: ', controlador$ui_name)
+    browser()
+    if (!is.null(controlador$data)) {
+        #
+    }
+  })
+  
+  
+	shiny::observe({
+	  message('ctrl data: ', controlador$data, '  ui_name: ', controlador$ui_name)
+	  if (is.null(controlador$data)) {
+	    return()
+	  } else {
+	    browser()
+	    # pega dados
+	    shiny::isolate({ 
+	      lst <- savePar$param[[paste0(controlador$ui_name)]]
+	      #input <- lst$input
+	      #output <- lst$output
+	    })
+	    
+	    name <- lst$name
+	    view.cols <- lst$view.cols
+	    view.label.cols <- lst$view.label.cols
+	    edit.cols <- lst$edit.cols
+	    edit.label.cols <- lst$edit.label.cols
+	    edit.require.cols <-  lst$edit.require.cols
+	    edit.require.label <- lst$edit.require.label
+	    input.types <- lst$input.types
+	    input.choices <- input.choices
+	    selectize <- lst$selectize
+	    modal.size <- lst$modal.size
+	    text.width <- lst$text.width
+	    textarea.width <- lst$textarea.width
+	    textarea.height <- lst$textarea.height
+	    date.width <- lst$date.width
+	    date.format <- lst$date.format
+	    numeric.width <- lst$numeric.width
+	    select.width <- lst$select.width
+	    defaultPageLength <- lst$defaultPageLength
+	    title.delete <- lst$title.delete
+	    title.delete.confirmation <- lst$title.delete.confirmation
+	    title.edit <- lst$title.edit
+	    title.add <- lst$title.add
+	    label.delete <- lst$label.delete
+	    label.edit <- lst$label.edit
+	    label.add <- lst$label.add
+	    label.copy <- lst$label.copy
+	    label.cancel <- lst$label.cancel
+	    label.save <- lst$label.save
+	    show.delete <- lst$show.delete
+	    show.update <- lst$show.update
+	    show.insert <- lst$show.insert
+	    show.copy <- lst$show.copy
+	    callback.delete <- lst$callback.delete
+	    callback.update <- lst$callback.update
+	    callback.insert <- lst$callback.insert
+	    click.time.threshold <- lst$click.time.threshold
+	    datatable.options <- lst$datatable.options
+	    
+	    browser()
+	    
+	    thedata <- shiny::isolate( controlador$data )
+	    DataTableName <- paste0(name, 'dt')
+	    
+	    #inputTypes <- inputTypes.go(thedata, edit.cols, input.types)
+	    thedata <- list2char(thedata)
+	    shiny::isolate(result$thedata <- thedata)
+	    #
+	    updateData(dt.proxy,
+	               controlador$data[,view.cols],
+	               rownames = FALSE) 
+	  }
+	})	# shiny:observe()
+
 	DataTableName <- paste0(name, 'dt')
-	
 	message('name: ', DataTableName)
-
+	
 	result <- shiny::reactiveValues()
-	result$thedata <- thedata
-	result$view.cols <- view.cols
-	result$view.label.cols <- view.label.cols
-	result$edit.cols <- edit.cols
 
+	shiny::isolate({  	# novo teste - isolate
+  	result$thedata <- thedata
+  	result$view.cols <- view.cols
+  	result$view.label.cols <- view.label.cols
+  	result$edit.cols <- edit.cols
+	})
+	
 	dt.proxy <- DT::dataTableProxy(DataTableName)
 
 
@@ -429,7 +571,6 @@ dtedit2 <- function(input, output, name, thedata,
 		thedata[,view.cols]
 	}, options = datatable.options, server=TRUE, selection='single', rownames=FALSE, colnames = view.label.cols )
 
-
 	output[[paste0(name, '_message')]] <- shiny::renderText('')
 
 	##### Build the UI for the DataTable and buttons ###########################
@@ -438,28 +579,7 @@ dtedit2 <- function(input, output, name, thedata,
 	                           label.add, label.edit, label.delete, label.copy )
 	
 	
-	
-	updateData <- function(proxy, data, ...) {
-		# Convert any list columns to characters before displaying
-		for(i in 1:ncol(data)) {
-			if(is.list(data[,i])) {
-				data[,i] <- sapply(data[,i], FUN = function(x) { paste0(x, collapse = ', ') })
-			}
-		}
-		DT::replaceData(proxy, data, ...)
-	}
-
-	shiny::observe({
-
-    message('Controlador: ', controlador$data, '  ui_name: ', controlador$ui_name)
-	  
-	  if (!is.null(controlador$data)) {
-	   # updateData(dt.proxy,
-	   #            controlador$data[,view.cols],
-	   #            rownames = FALSE) 
-	  }
-  })
-	
+	###########
 	
 	addModal <- function(row, values) {
 
@@ -502,7 +622,7 @@ dtedit2 <- function(input, output, name, thedata,
 		}
 		insert.click <- Sys.time()
 
-		newdata <- result$thedata
+		newdata <- shiny::isolate(result$thedata)
 		row <- nrow(newdata) + 1
 		newdata[row,] <- NA
 		lReq <- list() # TODO future use
@@ -533,9 +653,11 @@ dtedit2 <- function(input, output, name, thedata,
 			} else {
 				result$thedata <- newdata
 			}
-			updateData(dt.proxy,
-						result$thedata[,view.cols],
-						rownames = FALSE)
+			shiny::isolate({
+  			updateData(dt.proxy,
+  						result$thedata[,view.cols],
+  						rownames = FALSE)
+			})
 			shiny::removeModal()
 			return(TRUE)
 		}, error = function(e) {
@@ -550,7 +672,9 @@ dtedit2 <- function(input, output, name, thedata,
 		row <- input[[paste0(name, 'dt_rows_selected')]]
 		if(!is.null(row)) {
 			if(row > 0) {
-				shiny::showModal(addModal(values=result$thedata[row,]))
+			  shiny::isolate({
+				   shiny::showModal(addModal(values=result$thedata[row,]))
+			  })
 			}
 		}
 	})
@@ -559,13 +683,15 @@ dtedit2 <- function(input, output, name, thedata,
 
   editModal <- function(row) {
     output[[paste0(name, '_message')]] <- shiny::renderText('')
-    fields <- getFields('_edit_', values=result$thedata[row,],
+    shiny::isolate({
+      fields <- getFields('_edit_', values=result$thedata[row,],
                         edit.cols, edit.require.cols,
                         edit.label.cols, inputTypes, name, 
                         date.format, date.width, input.choices,
                         select.width, result, numeric.width,
                         textarea.width, textarea.height, text.width,
                         selectize)
+      })
     shiny::modalDialog(title = title.edit,
                        shiny::div(shiny::textOutput(paste0(name, '_message')), style='color:red'),
                        fields,
@@ -599,7 +725,7 @@ dtedit2 <- function(input, output, name, thedata,
 		row <- input[[paste0(name, 'dt_rows_selected')]]
 		if(!is.null(row)) {
 			if(row > 0) {
-				newdata <- result$thedata
+				newdata <- shiny::isolate(result$thedata)
 				# by dms
 				lReq <- list() # TODO future use
 				lack <- c()
@@ -622,16 +748,18 @@ dtedit2 <- function(input, output, name, thedata,
 				
 				tryCatch({
 					callback.data <- callback.update(data = newdata,
-													 olddata = result$thedata,
+													 olddata = shiny::isolate(result$thedata),
 													 row = row)
-					if(!is.null(callback.data) & is.data.frame(callback.data)) {
-						result$thedata <- callback.data
-					} else {
-						result$thedata <- newdata
-					}
-					updateData(dt.proxy,
-								result$thedata[,view.cols],
-								rownames = FALSE)
+					shiny::isolate({
+  					if(!is.null(callback.data) & is.data.frame(callback.data)) {
+  						result$thedata <- callback.data
+  					} else {
+  						result$thedata <- newdata
+  					}
+  					updateData(dt.proxy,
+  								result$thedata[,view.cols],
+  								rownames = FALSE)
+					})
 					shiny::removeModal()
 					return(TRUE)
 				}, error = function(e) {
@@ -651,9 +779,11 @@ dtedit2 <- function(input, output, name, thedata,
 	  fields <- list()
 	  # TODO - Put Description, no field names.
 	  # TODO - Format Text
-	  for(i in view.cols) {
-	    fields[[i]] <- shiny::div(paste0(i, ' = ', result$thedata[row,i]))
-	  }
+	  shiny::isolate({
+  	  for(i in view.cols) {
+  	    fields[[i]] <- shiny::div(paste0(i, ' = ', result$thedata[row,i]))
+  	  }
+	  })
 	  shiny::modalDialog(title = title.delete,
 	                     shiny::p(title.delete.confirmation), # 'Are you sure you want to delete this record?'
 	                     fields,
@@ -675,21 +805,23 @@ dtedit2 <- function(input, output, name, thedata,
 
 	shiny::observeEvent(input[[paste0(name, '_delete')]], {
 		row <- input[[paste0(name, 'dt_rows_selected')]]
-		if(!is.null(row)) {
-			if(row > 0) {
-				newdata <- callback.delete(data = result$thedata, row = row)
-				if(!is.null(newdata) & is.data.frame(newdata)) {
-					result$thedata <- newdata
-				} else {
-					result$thedata <- result$thedata[-row,]
-				}
-				updateData(dt.proxy,
-							result$thedata[,view.cols],
-							rownames = FALSE)
-				shiny::removeModal()
-				return(TRUE)
-			}
-		}
+		shiny::isolate({
+  		if(!is.null(row)) {
+  			if(row > 0) {
+  				newdata <- callback.delete(data = result$thedata, row = row)
+  				if(!is.null(newdata) & is.data.frame(newdata)) {
+  					result$thedata <- newdata
+  				} else {
+  					result$thedata <- result$thedata[-row,]
+  				}
+  				updateData(dt.proxy,
+  							result$thedata[,view.cols],
+  							rownames = FALSE)
+  				shiny::removeModal()
+  				return(TRUE)
+  			}
+  		}
+    })
 		return(FALSE)
 	})
 
