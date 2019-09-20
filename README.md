@@ -11,7 +11,12 @@
 Use the `devtools` package to install the development version of `DTedit`:
 
 ```r
-devtools::install_github('dmslabsbr/DTedit')
+devtools::install_github('dmslabsbr/dtedit2')
+```
+
+For a specific branch version, use:
+```r
+devtools::install_github('dmslabsbr/dtedit2', ref='v0.22f')
 ```
 
 The `dtedit_demo` will run a sample `shiny` app with to editable data tables.

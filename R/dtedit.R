@@ -4,7 +4,7 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.22f'
+  res <- '0.0.23'
   return(res)
 }
 
@@ -303,6 +303,7 @@ build.ui <- function(name, DataTableName,
 #'
 #' @param input Shiny input object passed from the server.
 #' @param output Shiny output object passed from the server.
+#' @param session Shiny output object passed from the server.
 #' @param name the name of the UI output. That is, put \code{uiOutput(name)} where
 #'        you want the DataTable in \code{ui.R}. When using more that one \code{dtedit}
 #'        within a Shiny application the name must be unique.
@@ -364,7 +365,8 @@ build.ui <- function(name, DataTableName,
 #' @param datatable.options options passed to \code{\link{DT::renderDataTable}}.
 #'        See \link{https://rstudio.github.io/DT/options.html} for more information.
 #' @export
-dtedit2 <- function(input, output, name, thedata,
+dtedit2 <- function(input, output, session,
+           name, thedata,
 				   view.cols = names(thedata),
 				   view.label.cols = view.cols,
 				   edit.cols = names(thedata),
@@ -403,10 +405,12 @@ dtedit2 <- function(input, output, name, thedata,
 				   click.time.threshold = 2, # in seconds
 				   datatable.options = list(pageLength = defaultPageLength)
 ) {
-  message("* DtEdit2 Version  : ",version())
+  message("* DtEdit2 Version  : ", version())
   message('- data - format    : ', date.format)
   message('- Current namespace: ', getAnywhere('input')$where)
-  message('- env              : ',format(pkg.env))
+  message('- env              : ', format(pkg.env))
+  message('- session          : ', format(shiny::getDefaultReactiveDomain()))
+  message('- session  (par)   : ', format(session))
   message('- running          : ', running(name))
   message("- the Data (2): ", head(thedata,2))
   
@@ -416,7 +420,7 @@ dtedit2 <- function(input, output, name, thedata,
   DataTableName <- paste0(name, 'dt')
   message('name: ', DataTableName)
   
-  dt.proxy <- DT::dataTableProxy(DataTableName)
+  dt.proxy <- DT::dataTableProxy(DataTableName, session = session)
   
   #save parameters for update
   shiny::isolate({
