@@ -4,7 +4,7 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.22a'
+  res <- '0.0.22f'
   return(res)
 }
 
@@ -12,12 +12,13 @@ version <- function() {
 #' @export
 controlador <- shiny::reactiveValues(data = NULL, ui_name = NULL, ctrl = NULL)
 savePar <- shiny::reactiveValues(param = list())
-#savePar <- list(param = list())
+# TODO future use
+#list.par <<- list(param = list())
 
 #' Change data in a dtedit2 table, but don´t update database
 #' It is like a filter.
-#' @dados New data to show - New data must have same fields.
-#' @ui_name dtedit2 ui_name to change
+#' @param dados New data to show - New data must have same fields.
+#' @param ui_name dtedit2 ui_name to change
 #' @export
 updateDados <- function(dados = NULL, ui_name = NULL) {
   controlador$data <- dados
@@ -407,7 +408,7 @@ dtedit2 <- function(input, output, name, thedata,
   message('- Current namespace: ', getAnywhere('input')$where)
   message('- env              : ',format(pkg.env))
   message('- running          : ', running(name))
-  message("- the Data: ", thedata)
+  message("- the Data (2): ", head(thedata,2))
   
   # Some basic parameter checking
   dataCheck(thedata, edit.cols, edit.label.cols, view.cols, view.label.cols, edit.require.cols)
@@ -417,12 +418,11 @@ dtedit2 <- function(input, output, name, thedata,
   
   dt.proxy <- DT::dataTableProxy(DataTableName)
   
-  browser()
-  
   #save parameters for update
   shiny::isolate({
     lst_param <- list(
-      input = input, output = output, name = name,
+      #input = input, output = output,
+      name = name,
       view.cols = view.cols,
       view.label.cols = view.label.cols,
       edit.cols = edit.cols,
@@ -463,9 +463,11 @@ dtedit2 <- function(input, output, name, thedata,
       dt.proxy = dt.proxy)
   })
   
+  browser()
   
   shiny::isolate({ 
     savePar$param[[paste0(name)]] <- lst_param
+    #list.par[[paste0(name)]] <<- lst_param
   })
   
   
@@ -485,7 +487,8 @@ dtedit2 <- function(input, output, name, thedata,
   }
   
 
-	shiny::observe({
+	#shiny::observe({
+  shiny::observeEvent(controlador$data, {
 	  message('ctrl data (1): ', head(controlador$data,1), '  ui_name: ', controlador$ui_name)
 	  if (is.null(controlador$data)) {
 	    return()
@@ -493,50 +496,51 @@ dtedit2 <- function(input, output, name, thedata,
 	    browser()
 	    # pega dados
 	    shiny::isolate({ 
-	      lst <- savePar$param[[paste0(controlador$ui_name)]]
+	      lstp <- savePar$param[[paste0(controlador$ui_name)]]
+	      #lstp2 <- list.par[paste0(controlador$ui_name)]
 	      #input <- lst$input
 	      #output <- lst$output
 	    })
 	    
-	    name <- lst$name
-	    view.cols <- lst$view.cols
-	    view.label.cols <- lst$view.label.cols
-	    edit.cols <- lst$edit.cols
-	    edit.label.cols <- lst$edit.label.cols
-	    edit.require.cols <-  lst$edit.require.cols
-	    edit.require.label <- lst$edit.require.label
-	    input.types <- lst$input.types
-	    input.choices <- input.choices
-	    selectize <- lst$selectize
-	    modal.size <- lst$modal.size
-	    text.width <- lst$text.width
-	    textarea.width <- lst$textarea.width
-	    textarea.height <- lst$textarea.height
-	    date.width <- lst$date.width
-	    date.format <- lst$date.format
-	    numeric.width <- lst$numeric.width
-	    select.width <- lst$select.width
-	    defaultPageLength <- lst$defaultPageLength
-	    title.delete <- lst$title.delete
-	    title.delete.confirmation <- lst$title.delete.confirmation
-	    title.edit <- lst$title.edit
-	    title.add <- lst$title.add
-	    label.delete <- lst$label.delete
-	    label.edit <- lst$label.edit
-	    label.add <- lst$label.add
-	    label.copy <- lst$label.copy
-	    label.cancel <- lst$label.cancel
-	    label.save <- lst$label.save
-	    show.delete <- lst$show.delete
-	    show.update <- lst$show.update
-	    show.insert <- lst$show.insert
-	    show.copy <- lst$show.copy
-	    callback.delete <- lst$callback.delete
-	    callback.update <- lst$callback.update
-	    callback.insert <- lst$callback.insert
-	    click.time.threshold <- lst$click.time.threshold
-	    datatable.options <- lst$datatable.options
-	    dt.proxy <- lst$dt.proxy
+	    name <- lstp$name
+	    view.cols <- lstp$view.cols
+	    view.label.cols <- lstp$view.label.cols
+	    edit.cols <- lstp$edit.cols
+	    edit.label.cols <- lstp$edit.label.cols
+	    edit.require.cols <-  lstp$edit.require.cols
+	    edit.require.label <- lstp$edit.require.label
+	    input.types <- lstp$input.types
+	    input.choices <- lstp$input.choices
+	    selectize <- lstp$selectize
+	    modal.size <- lstp$modal.size
+	    text.width <- lstp$text.width
+	    textarea.width <- lstp$textarea.width
+	    textarea.height <- lstp$textarea.height
+	    date.width <- lstp$date.width
+	    date.format <- lstp$date.format
+	    numeric.width <- lstp$numeric.width
+	    select.width <- lstp$select.width
+	    defaultPageLength <- lstp$defaultPageLength
+	    title.delete <- lstp$title.delete
+	    title.delete.confirmation <- lstp$title.delete.confirmation
+	    title.edit <- lstp$title.edit
+	    title.add <- lstp$title.add
+	    label.delete <- lstp$label.delete
+	    label.edit <- lstp$label.edit
+	    label.add <- lstp$label.add
+	    label.copy <- lstp$label.copy
+	    label.cancel <- lstp$label.cancel
+	    label.save <- lstp$label.save
+	    show.delete <- lstp$show.delete
+	    show.update <- lstp$show.update
+	    show.insert <- lstp$show.insert
+	    show.copy <- lstp$show.copy
+	    callback.delete <- lstp$callback.delete
+	    callback.update <- lstp$callback.update
+	    callback.insert <- lstp$callback.insert
+	    click.time.threshold <- lstp$click.time.threshold
+	    datatable.options <- lstp$datatable.options
+	    dt.proxy <- lstp$dt.proxy
 	    
 	    browser()
 	    

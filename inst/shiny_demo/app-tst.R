@@ -101,7 +101,7 @@ server <- function(input, output, session) {
 	  browser()
 	  message('observe event click btn3')
 	  #shiny::isolate(print(shiny::reactiveValuesToList(input)))
-	  dtedit2::updateDados(head(names,1),'names')
+	  dtedit2::updateDados(head(names,2),'names')
 	})
 	
 		
