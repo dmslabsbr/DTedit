@@ -97,11 +97,19 @@ server <- function(input, output, session) {
 	  dtedit2::updateDados(head(books,3),'books')
 	})
 	
+	shiny::observeEvent(input$btn3, {
+	  browser()
+	  message('observe event click btn3')
+	  #shiny::isolate(print(shiny::reactiveValuesToList(input)))
+	  dtedit2::updateDados(head(names,1),'names')
+	})
+	
 		
 }
 
 ##### Create the shiny UI
-ui <- shiny::fluidPage(shiny::actionButton('btn', 'Teste'), shiny::actionButton('btn2', 'Teste2'),
+ui <- shiny::fluidPage(shiny::actionButton('btn', 'Show Table'), shiny::actionButton('btn2', 'Update Table Books'),
+                       shiny::actionButton('btn3', 'Update Table Names'),
   shiny::h3('Books'),
   shiny::uiOutput('books'),
   shiny::hr(), shiny::h3('Email Addresses'),

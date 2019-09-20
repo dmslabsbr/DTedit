@@ -4,16 +4,20 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.20x21'
+  res <- '0.0.22a'
   return(res)
 }
 
 
 #' @export
-controlador <- shiny::reactiveValues(data = NULL, ui_name = NULL)
+controlador <- shiny::reactiveValues(data = NULL, ui_name = NULL, ctrl = NULL)
 savePar <- shiny::reactiveValues(param = list())
+#savePar <- list(param = list())
 
-
+#' Change data in a dtedit2 table, but don´t update database
+#' It is like a filter.
+#' @dados New data to show - New data must have same fields.
+#' @ui_name dtedit2 ui_name to change
 #' @export
 updateDados <- function(dados = NULL, ui_name = NULL) {
   controlador$data <- dados
@@ -405,48 +409,60 @@ dtedit2 <- function(input, output, name, thedata,
   message('- running          : ', running(name))
   message("- the Data: ", thedata)
   
-  lst_param <- list(
-    input = input, output = output, name = name,
-    view.cols = view.cols,
-    view.label.cols = view.label.cols,
-    edit.cols = edit.cols,
-    edit.label.cols = edit.label.cols,
-    edit.require.cols =  edit.require.cols,
-    edit.require.label = edit.require.label,
-    input.types = input.types,
-    input.choices = input.choices,
-    selectize = selectize,
-    modal.size = modal.size,
-    text.width = text.width,
-    textarea.width = textarea.width,
-    textarea.height = textarea.height,
-    date.width = date.width,
-    date.format = date.format,
-    numeric.width = numeric.width,
-    select.width = select.width,
-    defaultPageLength = defaultPageLength,
-    title.delete = title.delete,
-    title.delete.confirmation = title.delete.confirmation,
-    title.edit = title.edit,
-    title.add = title.add ,
-    label.delete = label.delete,
-    label.edit = label.edit,
-    label.add = label.add,
-    label.copy = label.copy,
-    label.cancel = label.cancel,
-    label.save = label.save,
-    show.delete = show.delete,
-    show.update = show.update,
-    show.insert = show.insert,
-    show.copy = show.copy,
-    callback.delete = callback.delete,
-    callback.update = callback.update,
-    callback.insert = callback.insert,
-    click.time.threshold = click.time.threshold, 
-    datatable.options = datatable.options
-  )
+  # Some basic parameter checking
+  dataCheck(thedata, edit.cols, edit.label.cols, view.cols, view.label.cols, edit.require.cols)
+  
+  DataTableName <- paste0(name, 'dt')
+  message('name: ', DataTableName)
+  
+  dt.proxy <- DT::dataTableProxy(DataTableName)
   
   browser()
+  
+  #save parameters for update
+  shiny::isolate({
+    lst_param <- list(
+      input = input, output = output, name = name,
+      view.cols = view.cols,
+      view.label.cols = view.label.cols,
+      edit.cols = edit.cols,
+      edit.label.cols = edit.label.cols,
+      edit.require.cols =  edit.require.cols,
+      edit.require.label = edit.require.label,
+      input.types = input.types,
+      input.choices = input.choices,
+      selectize = selectize,
+      modal.size = modal.size,
+      text.width = text.width,
+      textarea.width = textarea.width,
+      textarea.height = textarea.height,
+      date.width = date.width,
+      date.format = date.format,
+      numeric.width = numeric.width,
+      select.width = select.width,
+      defaultPageLength = defaultPageLength,
+      title.delete = title.delete,
+      title.delete.confirmation = title.delete.confirmation,
+      title.edit = title.edit,
+      title.add = title.add ,
+      label.delete = label.delete,
+      label.edit = label.edit,
+      label.add = label.add,
+      label.copy = label.copy,
+      label.cancel = label.cancel,
+      label.save = label.save,
+      show.delete = show.delete,
+      show.update = show.update,
+      show.insert = show.insert,
+      show.copy = show.copy,
+      callback.delete = callback.delete,
+      callback.update = callback.update,
+      callback.insert = callback.insert,
+      click.time.threshold = click.time.threshold, 
+      datatable.options = datatable.options,
+      dt.proxy = dt.proxy)
+  })
+  
   
   shiny::isolate({ 
     savePar$param[[paste0(name)]] <- lst_param
@@ -468,21 +484,9 @@ dtedit2 <- function(input, output, name, thedata,
     DT::replaceData(proxy, data, ...)
   }
   
-  
-	# Some basic parameter checking
-  dataCheck(thedata, edit.cols, edit.label.cols, view.cols, view.label.cols, edit.require.cols)
 
-  shiny::observe({
-    message('Controlador: ', controlador$data, '  ui_name: ', controlador$ui_name)
-    browser()
-    if (!is.null(controlador$data)) {
-        #
-    }
-  })
-  
-  
 	shiny::observe({
-	  message('ctrl data: ', controlador$data, '  ui_name: ', controlador$ui_name)
+	  message('ctrl data (1): ', head(controlador$data,1), '  ui_name: ', controlador$ui_name)
 	  if (is.null(controlador$data)) {
 	    return()
 	  } else {
@@ -532,11 +536,13 @@ dtedit2 <- function(input, output, name, thedata,
 	    callback.insert <- lst$callback.insert
 	    click.time.threshold <- lst$click.time.threshold
 	    datatable.options <- lst$datatable.options
+	    dt.proxy <- lst$dt.proxy
 	    
 	    browser()
 	    
 	    thedata <- shiny::isolate( controlador$data )
 	    DataTableName <- paste0(name, 'dt')
+	    
 	    
 	    #inputTypes <- inputTypes.go(thedata, edit.cols, input.types)
 	    thedata <- list2char(thedata)
@@ -547,9 +553,6 @@ dtedit2 <- function(input, output, name, thedata,
 	               rownames = FALSE) 
 	  }
 	})	# shiny:observe()
-
-	DataTableName <- paste0(name, 'dt')
-	message('name: ', DataTableName)
 	
 	result <- shiny::reactiveValues()
 
@@ -560,7 +563,7 @@ dtedit2 <- function(input, output, name, thedata,
   	result$edit.cols <- edit.cols
 	})
 	
-	dt.proxy <- DT::dataTableProxy(DataTableName)
+
 
 
 	#put correct inputTypes
