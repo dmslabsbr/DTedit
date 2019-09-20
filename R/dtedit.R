@@ -4,7 +4,7 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.20x19'
+  res <- '0.0.20x21'
   return(res)
 }
 
@@ -445,6 +445,8 @@ dtedit2 <- function(input, output, name, thedata,
     click.time.threshold = click.time.threshold, 
     datatable.options = datatable.options
   )
+  
+  browser()
   
   shiny::isolate({ 
     savePar$param[[paste0(name)]] <- lst_param
