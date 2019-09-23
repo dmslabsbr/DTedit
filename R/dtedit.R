@@ -4,7 +4,7 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.23e'
+  res <- '0.0.23f'
   return(res)
 }
 
@@ -234,7 +234,7 @@ checkReq <- function(input, tag,
   lReq <- list() # TODO future use for color require fields
   lack <- c()
   for(i in edit.cols) {
-    input_add <- input[[paste0(name, tag, i)]]
+    input_add <- shiny::isolate(input[[paste0(name, tag, i)]])
     lReq[i] <- TRUE
     if (all(i %in% edit.require.cols)) {
       if (is.null(input_add) || identical(input_add,'') ) {
@@ -412,8 +412,8 @@ dtedit2 <- function(input, output,
   message('- data - format    : ', date.format)
   message('- Current namespace: ', getAnywhere('input')$where)
   message('- env              : ', format(pkg.env))
-  message('- session          : ', format(shiny::getDefaultReactiveDomain()))
-  #message('- session (token)  : ', format(token))
+  #message('- session          : ', format(shiny::getDefaultReactiveDomain()))
+  message('- session (token)  : ', format(token))
   message('- running          : ', running(name))
   message("- the Data (2): ", head(thedata,2))
   
@@ -473,7 +473,7 @@ dtedit2 <- function(input, output,
       click.time.threshold = click.time.threshold, 
       datatable.options = datatable.options,
       dt.proxy = dt.proxy,
-      tolen = token)
+      token = token)
   })
   
   browser()
@@ -502,7 +502,9 @@ dtedit2 <- function(input, output,
 
 	#shiny::observe({
   shiny::observeEvent(controlador$data, {
-	  message('ctrl data (1): ', head(controlador$data,1), '  ui_name: ', controlador$ui_name)
+    message('  ctrl ui_name: ', controlador$ui_name,
+            ' - name: ', name, '   - ctrl$name: ', controlador$name)
+	  message('ctrl data (1): ', head(controlador$data,1))
 	  if (is.null(controlador$data)) {
 	    return()
 	  } else {
@@ -512,6 +514,10 @@ dtedit2 <- function(input, output,
 	      lstp <- savePar$param[[paste0(controlador$ui_name,'_',controlador$token)]]
 	      #lstp2 <- list.par[paste0(controlador$ui_name)]
 	    })
+	    
+	    print (' **** shiny::observeEvent(controlador$data - lstp')
+	    print(lstp)
+	    print (' ***************** ')
 	    
 	    name <- lstp$name
 	    view.cols <- lstp$view.cols
@@ -555,6 +561,8 @@ dtedit2 <- function(input, output,
 	    token <- lstp$token
 	    
 	    browser()
+	    message('- ctrl data token', token)
+	    message('- ctrl name', name)
 	    
 	    thedata <- shiny::isolate( controlador$data )
 	    DataTableName <- paste0(name, 'dt')
