@@ -4,7 +4,7 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.23c'
+  res <- '0.0.23e'
   return(res)
 }
 
@@ -413,7 +413,7 @@ dtedit2 <- function(input, output,
   message('- Current namespace: ', getAnywhere('input')$where)
   message('- env              : ', format(pkg.env))
   message('- session          : ', format(shiny::getDefaultReactiveDomain()))
-  message('- session (token)  : ', format(token))
+  #message('- session (token)  : ', format(token))
   message('- running          : ', running(name))
   message("- the Data (2): ", head(thedata,2))
   
@@ -552,7 +552,7 @@ dtedit2 <- function(input, output,
 	    click.time.threshold <- lstp$click.time.threshold
 	    datatable.options <- lstp$datatable.options
 	    dt.proxy <- lstp$dt.proxy
-	    token <- lstp@token
+	    token <- lstp$token
 	    
 	    browser()
 	    
@@ -845,8 +845,6 @@ dtedit2 <- function(input, output,
     })
 		return(FALSE)
 	})
-
-
 	
 	return(result)
 }
