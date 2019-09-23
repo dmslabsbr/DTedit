@@ -4,7 +4,7 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.23f'
+  res <- '0.0.23g'
   return(res)
 }
 
@@ -255,10 +255,10 @@ build.ui <- function(name, DataTableName,
   message("output[[name]]: ", name)
   message('DataTableName: ',DataTableName)
   message('name: ', name)
-  message('- name-dt: ', get0(name, pkg.env))
+  message('- antes name-dt: ', get0(name, pkg.env))
   
   assign(name, TRUE, pkg.env)
-  message('- name-dt: ', get0(name, pkg.env))
+  message('- depois name-dt: ', get0(name, pkg.env))
   
   tmpT <- shiny::renderUI({
     shiny::div(
@@ -415,6 +415,7 @@ dtedit2 <- function(input, output,
   #message('- session          : ', format(shiny::getDefaultReactiveDomain()))
   message('- session (token)  : ', format(token))
   message('- running          : ', running(name))
+  message('- param name       : ', name)
   message("- the Data (2): ", head(thedata,2))
   
 
@@ -426,7 +427,8 @@ dtedit2 <- function(input, output,
   name <- paste0(name, '_', token)
   
   DataTableName <- paste0(name, 'dt')
-  message('name: ', DataTableName)
+  message('DataTableName: ', DataTableName)
+  message('- New Name: ', name)
   
   dt.proxy <- DT::dataTableProxy(DataTableName, session = session)
   
@@ -479,6 +481,7 @@ dtedit2 <- function(input, output,
   browser()
   
   shiny::isolate({ 
+    message('Salvando parametros em :', name)
     savePar$param[[paste0(name)]] <- lst_param
     #list.par[[paste0(name)]] <<- lst_param
   })
@@ -511,13 +514,14 @@ dtedit2 <- function(input, output,
 	    browser()
 	    # pega dados
 	    shiny::isolate({ 
+	      message('Lendo parametros em :', paste0(controlador$ui_name,'_',controlador$token))
 	      lstp <- savePar$param[[paste0(controlador$ui_name,'_',controlador$token)]]
 	      #lstp2 <- list.par[paste0(controlador$ui_name)]
 	    })
 	    
-	    print (' **** shiny::observeEvent(controlador$data - lstp')
-	    print(lstp)
-	    print (' ***************** ')
+	    message (' **** shiny::observeEvent(controlador$data - lstp')
+	    message(print(lstp))
+	    message(print (' ***************** '))
 	    
 	    name <- lstp$name
 	    view.cols <- lstp$view.cols
@@ -561,8 +565,8 @@ dtedit2 <- function(input, output,
 	    token <- lstp$token
 	    
 	    browser()
-	    message('- ctrl data token', token)
-	    message('- ctrl name', name)
+	    message('- ctrl data token: ', token)
+	    message('- ctrl name: ', name)
 	    
 	    thedata <- shiny::isolate( controlador$data )
 	    DataTableName <- paste0(name, 'dt')
