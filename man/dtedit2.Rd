@@ -4,9 +4,10 @@
 \alias{dtedit2}
 \title{Function to create a DataTable with Add, Edit, and Delete buttons.}
 \usage{
-dtedit2(input, output, name, thedata, view.cols = names(thedata),
-  view.label.cols = view.cols, edit.cols = names(thedata),
-  edit.label.cols = edit.cols, edit.require.cols = NULL,
+dtedit2(input, output, session, token, name, thedata,
+  view.cols = names(thedata), view.label.cols = view.cols,
+  edit.cols = names(thedata), edit.label.cols = edit.cols,
+  edit.require.cols = NULL,
   edit.require.label = "The following fields are required: ",
   input.types = c(), input.choices = NULL, selectize = TRUE,
   modal.size = "m", text.width = "100\%", textarea.width = "570px",
@@ -28,6 +29,8 @@ dtedit2(input, output, name, thedata, view.cols = names(thedata),
 \item{input}{Shiny input object passed from the server.}
 
 \item{output}{Shiny output object passed from the server.}
+
+\item{session}{Shiny output object passed from the server.}
 
 \item{name}{the name of the UI output. That is, put \code{uiOutput(name)} where
 you want the DataTable in \code{ui.R}. When using more that one \code{dtedit}

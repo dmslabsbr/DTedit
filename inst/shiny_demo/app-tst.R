@@ -5,7 +5,7 @@ library(dtedit2)
 ##### Load books data.frame as a SQLite database
 conn <- dbConnect(RSQLite::SQLite(), "books.sqlite")
 
-message("Dtedit2 TESTE - V.", DTedit::version())
+message("Dtedit2 TESTE - V.", dtedit2::version())
 
 if (!'books' %in% dbListTables(conn)) {
 	books <- read.csv('books.csv', stringsAsFactors = FALSE)
@@ -63,12 +63,16 @@ books.delete.callback <- function(data, row) {
 server <- function(input, output, session) {
 	books <- getBooks()
 	
+	token <- session$token
+	message('session$token: ', token )
+	
 	#shiny::observe(print(shiny::reactiveValuesToList(input)) )
 	#message('outs: ', print(shiny::outputOptions(output)))
 	
 	shiny::observeEvent(input$btn, {
 
-	  dtedit2::dtedit2(input, output,
+	  dtedit2::dtedit2(input = input, output = output,
+	                   session = session, token = token,
 	                   name = 'books',
 	                   thedata = books,
 	                   edit.cols = c('Title', 'Authors', 'Date', 'Publisher'),
@@ -87,21 +91,30 @@ server <- function(input, output, session) {
 						Type = factor(levels=c('Admin', 'User')),
 						stringsAsFactors=FALSE)
 	names$Date <- as.Date(names$Date, origin='1970-01-01')
-	namesdt <- 	dtedit2::dtedit2(input, output, name = 'names', names, input.types =  c(Name='textInput'))
+	namesdt <- 	dtedit2::dtedit2(input = input,
+	                             output = output, 
+	                             session = session,
+	                             token = token,
+	                             name = 'names',
+	                             thedata = names, input.types =  c(Name='textInput'))
 	
 	shiny::observeEvent(input$btn2, {
 	  #message('outs: ', print(shiny::outputOptions(output)))
 	  browser()
 	  message('observe event click btn2')
 	  #shiny::isolate(print(shiny::reactiveValuesToList(input)))
-	  dtedit2::updateDados(head(books,3),'books')
+	  dtedit2::updateDados(dados = head(books,3),
+	                       ui_name = 'books',
+	                       token = token)
 	})
 	
 	shiny::observeEvent(input$btn3, {
 	  browser()
 	  message('observe event click btn3')
 	  #shiny::isolate(print(shiny::reactiveValuesToList(input)))
-	  dtedit2::updateDados(head(names,2),'names')
+	  dtedit2::updateDados(dados = head(names,2),
+	                       ui_name = 'names',
+	                       token = token)
 	})
 	
 		

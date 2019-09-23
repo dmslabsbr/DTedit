@@ -5,7 +5,7 @@
 \title{Change data in a dtedit2 table, but don´t update database
 It is like a filter.}
 \usage{
-updateDados(dados = NULL, ui_name = NULL)
+updateDados(dados, ui_name, token)
 }
 \arguments{
 \item{dados}{New data to show - New data must have same fields.}

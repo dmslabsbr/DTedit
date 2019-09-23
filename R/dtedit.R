@@ -4,13 +4,13 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.23'
+  res <- '0.0.23c'
   return(res)
 }
 
 
 #' @export
-controlador <- shiny::reactiveValues(data = NULL, ui_name = NULL, ctrl = NULL)
+controlador <- shiny::reactiveValues(data = NULL, ui_name = NULL, token = NULL, ctrl = NULL)
 savePar <- shiny::reactiveValues(param = list())
 # TODO future use
 #list.par <<- list(param = list())
@@ -20,9 +20,10 @@ savePar <- shiny::reactiveValues(param = list())
 #' @param dados New data to show - New data must have same fields.
 #' @param ui_name dtedit2 ui_name to change
 #' @export
-updateDados <- function(dados = NULL, ui_name = NULL) {
+updateDados <- function(dados, ui_name, token) {
   controlador$data <- dados
   controlador$ui_name <- ui_name
+  controlador$token <- token
   return(TRUE)
 }
 
@@ -365,7 +366,8 @@ build.ui <- function(name, DataTableName,
 #' @param datatable.options options passed to \code{\link{DT::renderDataTable}}.
 #'        See \link{https://rstudio.github.io/DT/options.html} for more information.
 #' @export
-dtedit2 <- function(input, output, session,
+dtedit2 <- function(input, output,
+           session, token,
            name, thedata,
 				   view.cols = names(thedata),
 				   view.label.cols = view.cols,
@@ -405,17 +407,23 @@ dtedit2 <- function(input, output, session,
 				   click.time.threshold = 2, # in seconds
 				   datatable.options = list(pageLength = defaultPageLength)
 ) {
+
   message("* DtEdit2 Version  : ", version())
   message('- data - format    : ', date.format)
   message('- Current namespace: ', getAnywhere('input')$where)
   message('- env              : ', format(pkg.env))
   message('- session          : ', format(shiny::getDefaultReactiveDomain()))
-  message('- session  (par)   : ', format(session))
+  message('- session (token)  : ', format(token))
   message('- running          : ', running(name))
   message("- the Data (2): ", head(thedata,2))
   
+
+  
   # Some basic parameter checking
   dataCheck(thedata, edit.cols, edit.label.cols, view.cols, view.label.cols, edit.require.cols)
+  
+  ui_output = name
+  name <- paste0(name, '_', token)
   
   DataTableName <- paste0(name, 'dt')
   message('name: ', DataTableName)
@@ -464,7 +472,8 @@ dtedit2 <- function(input, output, session,
       callback.insert = callback.insert,
       click.time.threshold = click.time.threshold, 
       datatable.options = datatable.options,
-      dt.proxy = dt.proxy)
+      dt.proxy = dt.proxy,
+      tolen = token)
   })
   
   browser()
@@ -500,10 +509,8 @@ dtedit2 <- function(input, output, session,
 	    browser()
 	    # pega dados
 	    shiny::isolate({ 
-	      lstp <- savePar$param[[paste0(controlador$ui_name)]]
+	      lstp <- savePar$param[[paste0(controlador$ui_name,'_',controlador$token)]]
 	      #lstp2 <- list.par[paste0(controlador$ui_name)]
-	      #input <- lst$input
-	      #output <- lst$output
 	    })
 	    
 	    name <- lstp$name
@@ -545,6 +552,7 @@ dtedit2 <- function(input, output, session,
 	    click.time.threshold <- lstp$click.time.threshold
 	    datatable.options <- lstp$datatable.options
 	    dt.proxy <- lstp$dt.proxy
+	    token <- lstp@token
 	    
 	    browser()
 	    
@@ -587,7 +595,7 @@ dtedit2 <- function(input, output, session,
 	output[[paste0(name, '_message')]] <- shiny::renderText('')
 
 	##### Build the UI for the DataTable and buttons ###########################
-	output[[name]] <- build.ui(name, DataTableName, 
+	output[[ui_output]] <- build.ui(name, DataTableName, 
 	                           show.insert, show.update, show.delete, show.copy,
 	                           label.add, label.edit, label.delete, label.copy )
 	
