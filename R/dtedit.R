@@ -4,10 +4,13 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.23g'
+  res <- '0.0.23p'
   return(res)
 }
 
+
+#TODO remove controlador before 1st use
+#TODO remove savePar, before exit
 
 #' @export
 controlador <- shiny::reactiveValues(data = NULL, ui_name = NULL, token = NULL, ctrl = NULL)
@@ -15,12 +18,28 @@ savePar <- shiny::reactiveValues(param = list())
 # TODO future use
 #list.par <<- list(param = list())
 
+
+#' Use this function one time to set dtedit2 variables to default
+#' @export
+start <- function() {
+  browser()
+  message('0) ', format(getAnywhere('controlador')$where))
+  message('1) exist controlador: ', getAnywhere('controlador'))
+  rm('controlador', envir = environment(dtedit2))
+  #rm('controlador', parent.env(parent.env(parent.env(parent.env(environment(dtedit2))))))
+  message('2) exist controlador: ', getAnywhere('controlador'))
+  controlador <- shiny::reactiveValues(data = NULL, ui_name = NULL, token = NULL, ctrl = NULL)
+  
+  savePar <- shiny::reactiveValues(param = list())
+}
+
 #' Change data in a dtedit2 table, but don´t update database
 #' It is like a filter.
 #' @param dados New data to show - New data must have same fields.
 #' @param ui_name dtedit2 ui_name to change
 #' @export
 updateDados <- function(dados, ui_name, token) {
+  browser()
   controlador$data <- dados
   controlador$ui_name <- ui_name
   controlador$token <- token
@@ -57,9 +76,9 @@ running <- function(name = NULL) {
   dtname <- paste0(name, '_dt')
   d.1 <- name
   d.2 <- get0(name, pkg.env)
-  message('Datatablename (d1): ', d.1)
+  message('PKG Datatablename (d1): ', d.1)
   message('pkg.env       (d2): ', d.2)
-  message('dtname            : ', dtname)
+  message('pkg dtname            : ', dtname)
   if (is.null(d.2)) {
     res <- FALSE
   } else {
@@ -475,7 +494,9 @@ dtedit2 <- function(input, output,
       click.time.threshold = click.time.threshold, 
       datatable.options = datatable.options,
       dt.proxy = dt.proxy,
-      token = token)
+      token = token,
+      env = environment(),
+      envpar = parent.env(environment()))
   })
   
   browser()
@@ -494,6 +515,7 @@ dtedit2 <- function(input, output,
   
   updateData <- function(proxy, data, ...) {
     # Convert any list columns to characters before displaying
+    browser()
     for(i in 1:ncol(data)) {
       if(is.list(data[,i])) {
         data[,i] <- sapply(data[,i], FUN = function(x) { paste0(x, collapse = ', ') })
@@ -508,67 +530,72 @@ dtedit2 <- function(input, output,
     message('  ctrl ui_name: ', controlador$ui_name,
             ' - name: ', name, '   - ctrl$name: ', controlador$name)
 	  message('ctrl data (1): ', head(controlador$data,1))
+	  message('token: ', token)
+	  browser()
 	  if (is.null(controlador$data)) {
 	    return()
 	  } else {
-	    browser()
+	    browser()  # novo teste para zerar o controlador
+	    ctrl <- shiny::isolate(controlador)
+	    shiny::isolate({controlador <- list()})
 	    # pega dados
 	    shiny::isolate({ 
-	      message('Lendo parametros em :', paste0(controlador$ui_name,'_',controlador$token))
-	      lstp <- savePar$param[[paste0(controlador$ui_name,'_',controlador$token)]]
+	      message('Lendo parametros em :', paste0(ctrl$ui_name,'_',ctrl$token))
+	      lstp <- savePar$param[[paste0(ctrl$ui_name,'_',ctrl$token)]]
 	      #lstp2 <- list.par[paste0(controlador$ui_name)]
 	    })
 	    
 	    message (' **** shiny::observeEvent(controlador$data - lstp')
-	    message(print(lstp))
+	    message(print(names(lstp)))
 	    message(print (' ***************** '))
-	    
-	    name <- lstp$name
-	    view.cols <- lstp$view.cols
-	    view.label.cols <- lstp$view.label.cols
-	    edit.cols <- lstp$edit.cols
-	    edit.label.cols <- lstp$edit.label.cols
-	    edit.require.cols <-  lstp$edit.require.cols
-	    edit.require.label <- lstp$edit.require.label
-	    input.types <- lstp$input.types
-	    input.choices <- lstp$input.choices
-	    selectize <- lstp$selectize
-	    modal.size <- lstp$modal.size
-	    text.width <- lstp$text.width
-	    textarea.width <- lstp$textarea.width
-	    textarea.height <- lstp$textarea.height
-	    date.width <- lstp$date.width
-	    date.format <- lstp$date.format
-	    numeric.width <- lstp$numeric.width
-	    select.width <- lstp$select.width
-	    defaultPageLength <- lstp$defaultPageLength
-	    title.delete <- lstp$title.delete
-	    title.delete.confirmation <- lstp$title.delete.confirmation
-	    title.edit <- lstp$title.edit
-	    title.add <- lstp$title.add
-	    label.delete <- lstp$label.delete
-	    label.edit <- lstp$label.edit
-	    label.add <- lstp$label.add
-	    label.copy <- lstp$label.copy
-	    label.cancel <- lstp$label.cancel
-	    label.save <- lstp$label.save
-	    show.delete <- lstp$show.delete
-	    show.update <- lstp$show.update
-	    show.insert <- lstp$show.insert
-	    show.copy <- lstp$show.copy
-	    callback.delete <- lstp$callback.delete
-	    callback.update <- lstp$callback.update
-	    callback.insert <- lstp$callback.insert
-	    click.time.threshold <- lstp$click.time.threshold
-	    datatable.options <- lstp$datatable.options
-	    dt.proxy <- lstp$dt.proxy
-	    token <- lstp$token
+	    shiny::isolate({
+  	    name <- lstp$name
+  	    view.cols <- lstp$view.cols
+  	    view.label.cols <- lstp$view.label.cols
+  	    edit.cols <- lstp$edit.cols
+  	    edit.label.cols <- lstp$edit.label.cols
+  	    edit.require.cols <-  lstp$edit.require.cols
+  	    edit.require.label <- lstp$edit.require.label
+  	    input.types <- lstp$input.types
+  	    input.choices <- lstp$input.choices
+  	    selectize <- lstp$selectize
+  	    modal.size <- lstp$modal.size
+  	    text.width <- lstp$text.width
+  	    textarea.width <- lstp$textarea.width
+  	    textarea.height <- lstp$textarea.height
+  	    date.width <- lstp$date.width
+  	    date.format <- lstp$date.format
+  	    numeric.width <- lstp$numeric.width
+  	    select.width <- lstp$select.width
+  	    defaultPageLength <- lstp$defaultPageLength
+  	    title.delete <- lstp$title.delete
+  	    title.delete.confirmation <- lstp$title.delete.confirmation
+  	    title.edit <- lstp$title.edit
+  	    title.add <- lstp$title.add
+  	    label.delete <- lstp$label.delete
+  	    label.edit <- lstp$label.edit
+  	    label.add <- lstp$label.add
+  	    label.copy <- lstp$label.copy
+  	    label.cancel <- lstp$label.cancel
+  	    label.save <- lstp$label.save
+  	    show.delete <- lstp$show.delete
+  	    show.update <- lstp$show.update
+  	    show.insert <- lstp$show.insert
+  	    show.copy <- lstp$show.copy
+  	    callback.delete <- lstp$callback.delete
+  	    callback.update <- lstp$callback.update
+  	    callback.insert <- lstp$callback.insert
+  	    click.time.threshold <- lstp$click.time.threshold
+  	    datatable.options <- lstp$datatable.options
+  	    dt.proxy <- lstp$dt.proxy
+  	    token <- lstp$token
+	    })
 	    
 	    browser()
 	    message('- ctrl data token: ', token)
 	    message('- ctrl name: ', name)
 	    
-	    thedata <- shiny::isolate( controlador$data )
+	    thedata <- shiny::isolate( ctrl$data )
 	    DataTableName <- paste0(name, 'dt')
 	    
 	    
@@ -577,7 +604,7 @@ dtedit2 <- function(input, output,
 	    shiny::isolate(result$thedata <- thedata)
 	    #
 	    updateData(dt.proxy,
-	               controlador$data[,view.cols],
+	               thedata[,view.cols],
 	               rownames = FALSE) 
 	  }
 	})	# shiny:observe()

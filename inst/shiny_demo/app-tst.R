@@ -1,3 +1,5 @@
+# app-tst.R - For Testing
+
 library(shiny)
 library(RSQLite)
 library(dtedit2)
@@ -6,6 +8,11 @@ library(dtedit2)
 conn <- dbConnect(RSQLite::SQLite(), "books.sqlite")
 
 message("Dtedit2 TESTE - V.", dtedit2::version())
+
+browser()
+
+# set controlador to default
+dtedit2::start()
 
 if (!'books' %in% dbListTables(conn)) {
 	books <- read.csv('books.csv', stringsAsFactors = FALSE)
@@ -66,8 +73,18 @@ server <- function(input, output, session) {
 	token <- session$token
 	message('session$token: ', token )
 	
+	browser()
+	
 	#shiny::observe(print(shiny::reactiveValuesToList(input)) )
 	#message('outs: ', print(shiny::outputOptions(output)))
+	
+	output$info <- shiny::renderUI({
+	  shiny::br()
+	  paste0('token: ', print(token))
+	  shiny::br()
+	  paste0('time: ', Sys.time(), ' token: ', token )
+	})
+	
 	
 	shiny::observeEvent(input$btn, {
 
@@ -121,8 +138,12 @@ server <- function(input, output, session) {
 }
 
 ##### Create the shiny UI
-ui <- shiny::fluidPage(shiny::actionButton('btn', 'Show Table'), shiny::actionButton('btn2', 'Update Table Books'),
+ui <- shiny::fluidPage(shiny::uiOutput('info'),
+                       shiny::br(''),
+                       shiny::actionButton('btn', 'Show Table'),
+                       shiny::actionButton('btn2', 'Update Table Books'),
                        shiny::actionButton('btn3', 'Update Table Names'),
+                       shiny::br(''),
   shiny::h3('Books'),
   shiny::uiOutput('books'),
   shiny::hr(), shiny::h3('Email Addresses'),
