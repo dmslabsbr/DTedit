@@ -4,10 +4,13 @@
 \alias{dtedit2}
 \title{Function to create a DataTable with Add, Edit, and Delete buttons.}
 \usage{
-dtedit2(input, output, session, token, name, thedata,
-  view.cols = names(thedata), view.label.cols = view.cols,
-  edit.cols = names(thedata), edit.label.cols = edit.cols,
-  edit.require.cols = NULL,
+dtedit2(input, output, session, token, thedataf,
+  view.cols = names(shiny::isolate(if (shiny::is.reactive(thedataf)) {   
+   thedataf() } else {     thedataf })),
+  view.label.cols = shiny::isolate(view.cols),
+  edit.cols = names(shiny::isolate(if (shiny::is.reactive(thedataf)) {   
+   thedataf() } else {     thedataf })),
+  edit.label.cols = isolate(edit.cols), edit.require.cols = NULL,
   edit.require.label = "The following fields are required: ",
   input.types = c(), input.choices = NULL, selectize = TRUE,
   modal.size = "m", text.width = "100\%", textarea.width = "570px",
@@ -32,11 +35,7 @@ dtedit2(input, output, session, token, name, thedata,
 
 \item{session}{Shiny output object passed from the server.}
 
-\item{name}{the name of the UI output. That is, put \code{uiOutput(name)} where
-you want the DataTable in \code{ui.R}. When using more that one \code{dtedit}
-within a Shiny application the name must be unique.}
-
-\item{thedata}{a data frame to view and edit.}
+\item{thedataf}{a data frame to view and edit and update (Can be a reactive)}
 
 \item{view.cols}{character vector with the column names to show in the DataTable.
 This can be a subset of the full \code{data.frame}.}
@@ -128,6 +127,10 @@ feature. For developers, a message is printed using the warning function.}
 
 \item{datatable.options}{options passed to \code{\link{DT::renderDataTable}}.
 See \link{https://rstudio.github.io/DT/options.html} for more information.}
+
+\item{name}{the name of the UI output. That is, put \code{uiOutput(name)} where
+you want the DataTable in \code{ui.R}. When using more that one \code{dtedit}
+within a Shiny application the name must be unique.}
 }
 \description{
 This object will maintain data state. However, in order of the data to persist
@@ -157,3 +160,7 @@ Callback functions may return a \code{data.frame}. When a \code{data.frame} is
 returned that will become the current state of the data table. If anything
 else is returned then the internal \code{data.frame} will be used.
 }
+\seealso{
+Other Datatable Edit functions: \code{\link{dteditUI}}
+}
+\concept{Datatable Edit functions}

@@ -4,88 +4,47 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.23p'
+  res <- '0.0.23-t-6'
   return(res)
 }
 
 
-#TODO remove controlador before 1st use
-#TODO remove savePar, before exit
-
-#' @export
-controlador <- shiny::reactiveValues(data = NULL, ui_name = NULL, token = NULL, ctrl = NULL)
-savePar <- shiny::reactiveValues(param = list())
-# TODO future use
-#list.par <<- list(param = list())
-
-
-#' Use this function one time to set dtedit2 variables to default
-#' @export
-start <- function() {
-  browser()
-  message('0) ', format(getAnywhere('controlador')$where))
-  message('1) exist controlador: ', getAnywhere('controlador'))
-  rm('controlador', envir = environment(dtedit2))
-  #rm('controlador', parent.env(parent.env(parent.env(parent.env(environment(dtedit2))))))
-  message('2) exist controlador: ', getAnywhere('controlador'))
-  controlador <- shiny::reactiveValues(data = NULL, ui_name = NULL, token = NULL, ctrl = NULL)
-  
-  savePar <- shiny::reactiveValues(param = list())
-}
-
-#' Change data in a dtedit2 table, but don´t update database
-#' It is like a filter.
-#' @param dados New data to show - New data must have same fields.
-#' @param ui_name dtedit2 ui_name to change
-#' @export
-updateDados <- function(dados, ui_name, token) {
-  browser()
-  controlador$data <- dados
-  controlador$ui_name <- ui_name
-  controlador$token <- token
-  return(TRUE)
-}
-
-#' @export
 insert.click <- NA
 update.click <- NA
 
-pkg.env <- new.env(parent = emptyenv())
-pkg.env$books <- F
-pkg.env$names <- F
 
 
-#' Get current environment
+#' Create a DataTable with external update using reactive data.
 #'
-#' @return version
+#' dteditUI - user-interface function
 #'
+#' Use in conjunction with \code{callModule} and \code{dtedit} to create
+#' editable datatables. \code{dteditUI} is used in the 'user interface' component
+#' of the shiny app.
+#'
+#' @param id the namespace of the module
+#' @family Datatable Edit functions
+#' @seealso \code{\link{dtedit}} : the companion server-component function.\cr
+#!
+#'  \itemize{
+#'  \item \code{example("dtedit")} for a simple example.
+#'  \item \code{example("dteditUI")} for a simple example with reactive dataframe
+#'  \item \code{dtedit_demo()} for a more complex example. Includes database interaction
+#'  and interactions between the data of multiple datatables.
+#'  }
+#' @example inst/examples/example_reactivedataframe.R
 #' @export
-getEnv <- function() {
-  return(pkg.env)
+dteditUI <- function(id) {
+  
+  browser()
+  ns <- shiny::NS(id)
+  shiny::tagList(
+    shiny::uiOutput(ns("editdt"))
+  )
 }
 
 
-#' Return if \code{uiOutput(name)} is running
-#'
-#' @param name the name of the UI output.
-#' @return version
-#'
-#' @export
-running <- function(name = NULL) {
-  if (is.null(name)) return(ls(pkg.env))
-  dtname <- paste0(name, '_dt')
-  d.1 <- name
-  d.2 <- get0(name, pkg.env)
-  message('PKG Datatablename (d1): ', d.1)
-  message('pkg.env       (d2): ', d.2)
-  message('pkg dtname            : ', dtname)
-  if (is.null(d.2)) {
-    res <- FALSE
-  } else {
-    res <- (d.2 == TRUE)  
-  }
-  return(res)
-}
+
 
 # check dtedit2 parameters
 dataCheck <- function(thedata, edit.cols, edit.label.cols, view.cols, view.label.cols, edit.require.cols) {
@@ -158,13 +117,14 @@ selectInputMultiple <- function(selectize, ...) {
 
 
 # get fields data
-getFields <- function(typeName, values,
+getFields <- function(session, typeName, values,
                       edit.cols, edit.require.cols,
                       edit.label.cols, inputTypes, name, 
                       date.format, date.width, input.choices,
                       select.width, result, numeric.width,
                       textarea.width, textarea.height, text.width,
                       selectize) {
+  ns <- session$ns
   fields <- list()
   for(i in seq_along(edit.cols)) {
     if (all(edit.cols[i] %in% edit.require.cols)) {
@@ -177,7 +137,7 @@ getFields <- function(typeName, values,
       value <- ifelse(missing(values),
                       as.character(Sys.Date()),
                       as.character(values[,edit.cols[i]]))
-      fields[[i]] <- shiny::dateInput(paste0(name, typeName, edit.cols[i]),
+      fields[[i]] <- shiny::dateInput(ns(paste0(name, typeName, edit.cols[i])),
                                       label=edit.label.cols[i],
                                       value=value,
                                       format=date.format,
@@ -201,7 +161,7 @@ getFields <- function(typeName, values,
                        '. Specify them using the input.choices parameter'))
       }
       fields[[i]] <- selectInputMultiple(selectize, 
-                                         paste0(name, typeName, edit.cols[i]),
+                                         ns(paste0(name, typeName, edit.cols[i])),
                                          label=edit.label.cols[i],
                                          choices=choices,
                                          selected=value,
@@ -210,7 +170,7 @@ getFields <- function(typeName, values,
     } else if(inputTypes[i] == 'selectInput') {
       value <- ifelse(missing(values), '', as.character(values[,edit.cols[i]]))
       shiny::isolate({
-        fields[[i]] <- shiny::selectInput(paste0(name, typeName, edit.cols[i]),
+        fields[[i]] <- shiny::selectInput(ns(paste0(name, typeName, edit.cols[i])),
                                           label=edit.label.cols[i],
                                           choices=levels(result$thedata[,edit.cols[i]]),
                                           selected=value,
@@ -218,25 +178,25 @@ getFields <- function(typeName, values,
       })
     } else if(inputTypes[i] == 'numericInput') {
       value <- ifelse(missing(values), 0, values[,edit.cols[i]])
-      fields[[i]] <- shiny::numericInput(paste0(name, typeName, edit.cols[i]),
+      fields[[i]] <- shiny::numericInput(ns(paste0(name, typeName, edit.cols[i])),
                                          label=edit.label.cols[i],
                                          value=value,
                                          width=numeric.width)
     } else if(inputTypes[i] == 'textAreaInput') {
       value <- ifelse(missing(values), '', values[,edit.cols[i]])
-      fields[[i]] <- shiny::textAreaInput(paste0(name, typeName, edit.cols[i]),
+      fields[[i]] <- shiny::textAreaInput(ns(paste0(name, typeName, edit.cols[i])),
                                           label=edit.label.cols[i],
                                           value=value,
                                           width=textarea.width, height=textarea.height)
     } else if(inputTypes[i] == 'textInput') {
       value <- ifelse(missing(values), '', values[,edit.cols[i]])
-      fields[[i]] <- shiny::textInput(paste0(name, typeName, edit.cols[i]),
+      fields[[i]] <- shiny::textInput(ns(paste0(name, typeName, edit.cols[i])),
                                       label=edit.label.cols[i],
                                       value=value,
                                       width=text.width)
     } else if(inputTypes[i] == 'passwordInput') {
       value <- ifelse(missing(values), '', values[,edit.cols[i]])
-      fields[[i]] <- shiny::passwordInput(paste0(name, typeName, edit.cols[i]),
+      fields[[i]] <- shiny::passwordInput(ns(paste0(name, typeName, edit.cols[i])),
                                           label=edit.label.cols[i],
                                           value=value,
                                           width=text.width)
@@ -267,29 +227,6 @@ checkReq <- function(input, tag,
 }	
 
 
-##### Build the UI for the DataTable and buttons ###########################
-build.ui <- function(name, DataTableName, 
-                     show.insert, show.update, show.delete, show.copy,
-                     label.add, label.edit, label.delete, label.copy ) {
-  message("output[[name]]: ", name)
-  message('DataTableName: ',DataTableName)
-  message('name: ', name)
-  message('- antes name-dt: ', get0(name, pkg.env))
-  
-  assign(name, TRUE, pkg.env)
-  message('- depois name-dt: ', get0(name, pkg.env))
-  
-  tmpT <- shiny::renderUI({
-    shiny::div(
-      if(show.insert) { shiny::actionButton(paste0(name, '_add'), label.add) },
-      if(show.update) { shiny::actionButton(paste0(name, '_edit'), label.edit) },
-      if(show.delete) { shiny::actionButton(paste0(name, '_remove'), label.delete) },
-      if(show.copy) { shiny::actionButton(paste0(name, '_copy'), label.copy) },
-      shiny::br(), shiny::br(), DT::dataTableOutput(DataTableName)
-    )
-  })
-  return (tmpT)
-}
 
 
 
@@ -327,7 +264,7 @@ build.ui <- function(name, DataTableName,
 #' @param name the name of the UI output. That is, put \code{uiOutput(name)} where
 #'        you want the DataTable in \code{ui.R}. When using more that one \code{dtedit}
 #'        within a Shiny application the name must be unique.
-#' @param thedata a data frame to view and edit.
+#' @param thedataf a data frame to view and edit and update (Can be a reactive)
 #' @param view.cols character vector with the column names to show in the DataTable.
 #'        This can be a subset of the full \code{data.frame}.
 #' @param edit.cols character vector with the column names the user can edit/add.
@@ -384,14 +321,17 @@ build.ui <- function(name, DataTableName,
 #'        feature. For developers, a message is printed using the warning function.
 #' @param datatable.options options passed to \code{\link{DT::renderDataTable}}.
 #'        See \link{https://rstudio.github.io/DT/options.html} for more information.
+#' @family Datatable Edit functions
 #' @export
 dtedit2 <- function(input, output,
-           session, token,
-           name, thedata,
-				   view.cols = names(thedata),
-				   view.label.cols = view.cols,
-				   edit.cols = names(thedata),
-				   edit.label.cols = edit.cols,
+           session,
+           token,
+           #name,
+           thedataf,
+				   view.cols = names(shiny::isolate(if(shiny::is.reactive(thedataf)) {thedataf()} else {thedataf})),
+				   view.label.cols = shiny::isolate(view.cols),
+				   edit.cols = names(shiny::isolate(if(shiny::is.reactive(thedataf)) {thedataf()} else {thedataf})),
+				   edit.label.cols = isolate(edit.cols),
 				   edit.require.cols = NULL,
 				   edit.require.label = 'The following fields are required: ',
 				   input.types = c(),  # test
@@ -427,87 +367,98 @@ dtedit2 <- function(input, output,
 				   datatable.options = list(pageLength = defaultPageLength)
 ) {
 
+  browser()
+  
   message("* DtEdit2 Version  : ", version())
   message('- data - format    : ', date.format)
   message('- Current namespace: ', getAnywhere('input')$where)
-  message('- env              : ', format(pkg.env))
-  #message('- session          : ', format(shiny::getDefaultReactiveDomain()))
   message('- session (token)  : ', format(token))
-  message('- running          : ', running(name))
-  message('- param name       : ', name)
+  #message('- running          : ', running(name))
+  #message('- param name       : ', name)
+  
+  # if a reactive has been passed, obtain the value
+  thedata <- if(shiny::is.reactive(shiny::isolate(thedataf)))
+    {shiny::isolate(thedataf())} else {thedataf}
+  
   message("- the Data (2): ", head(thedata,2))
   
-
+  browser()
+  # TODO NEED TO CORRECT
+  view.label.cols <- view.cols
+  edit.require.cols <- NULL
+  session <- shiny::getDefaultReactiveDomain()
   
   # Some basic parameter checking
   dataCheck(thedata, edit.cols, edit.label.cols, view.cols, view.label.cols, edit.require.cols)
   
+  name <- "editdt"
   ui_output = name
-  name <- paste0(name, '_', token)
+  #name <- paste0(name, '_', token)
   
   DataTableName <- paste0(name, 'dt')
   message('DataTableName: ', DataTableName)
   message('- New Name: ', name)
   
-  dt.proxy <- DT::dataTableProxy(DataTableName, session = session)
+  result <- shiny::reactiveValues()
+  result$thedata <- thedata
+  result$view.cols <- view.cols
+  result$view.label.cols <- view.label.cols
+  result$edit.cols <- edit.cols
+  
+  #dt.proxy <- DT::dataTableProxy(DataTableName, session = session)
+  dt.proxy <- DT::dataTableProxy(DataTableName)
   
   #save parameters for update
-  shiny::isolate({
-    lst_param <- list(
-      #input = input, output = output,
-      name = name,
-      view.cols = view.cols,
-      view.label.cols = view.label.cols,
-      edit.cols = edit.cols,
-      edit.label.cols = edit.label.cols,
-      edit.require.cols =  edit.require.cols,
-      edit.require.label = edit.require.label,
-      input.types = input.types,
-      input.choices = input.choices,
-      selectize = selectize,
-      modal.size = modal.size,
-      text.width = text.width,
-      textarea.width = textarea.width,
-      textarea.height = textarea.height,
-      date.width = date.width,
-      date.format = date.format,
-      numeric.width = numeric.width,
-      select.width = select.width,
-      defaultPageLength = defaultPageLength,
-      title.delete = title.delete,
-      title.delete.confirmation = title.delete.confirmation,
-      title.edit = title.edit,
-      title.add = title.add ,
-      label.delete = label.delete,
-      label.edit = label.edit,
-      label.add = label.add,
-      label.copy = label.copy,
-      label.cancel = label.cancel,
-      label.save = label.save,
-      show.delete = show.delete,
-      show.update = show.update,
-      show.insert = show.insert,
-      show.copy = show.copy,
-      callback.delete = callback.delete,
-      callback.update = callback.update,
-      callback.insert = callback.insert,
-      click.time.threshold = click.time.threshold, 
-      datatable.options = datatable.options,
-      dt.proxy = dt.proxy,
-      token = token,
-      env = environment(),
-      envpar = parent.env(environment()))
-  })
+  # shiny::isolate({
+  #   lst_param <- list(
+  #     #input = input, output = output,
+  #     name = name,
+  #     view.cols = view.cols,
+  #     view.label.cols = view.label.cols,
+  #     edit.cols = edit.cols,
+  #     edit.label.cols = edit.label.cols,
+  #     edit.require.cols =  edit.require.cols,
+  #     edit.require.label = edit.require.label,
+  #     input.types = input.types,
+  #     input.choices = input.choices,
+  #     selectize = selectize,
+  #     modal.size = modal.size,
+  #     text.width = text.width,
+  #     textarea.width = textarea.width,
+  #     textarea.height = textarea.height,
+  #     date.width = date.width,
+  #     date.format = date.format,
+  #     numeric.width = numeric.width,
+  #     select.width = select.width,
+  #     defaultPageLength = defaultPageLength,
+  #     title.delete = title.delete,
+  #     title.delete.confirmation = title.delete.confirmation,
+  #     title.edit = title.edit,
+  #     title.add = title.add ,
+  #     label.delete = label.delete,
+  #     label.edit = label.edit,
+  #     label.add = label.add,
+  #     label.copy = label.copy,
+  #     label.cancel = label.cancel,
+  #     label.save = label.save,
+  #     show.delete = show.delete,
+  #     show.update = show.update,
+  #     show.insert = show.insert,
+  #     show.copy = show.copy,
+  #     callback.delete = callback.delete,
+  #     callback.update = callback.update,
+  #     callback.insert = callback.insert,
+  #     click.time.threshold = click.time.threshold, 
+  #     datatable.options = datatable.options,
+  #     dt.proxy = dt.proxy,
+  #     token = token,
+  #     env = environment(),
+  #     envpar = parent.env(environment()))
+  # })
   
-  browser()
+
   
-  shiny::isolate({ 
-    message('Salvando parametros em :', name)
-    savePar$param[[paste0(name)]] <- lst_param
-    #list.par[[paste0(name)]] <<- lst_param
-  })
-  
-  
+
   #message('values: ', (isolate(print(reactiveValuesToList(input)))))
   #message('outs: ', print(shiny::outputOptions(output)))
   
@@ -525,99 +476,7 @@ dtedit2 <- function(input, output,
   }
   
 
-	#shiny::observe({
-  shiny::observeEvent(controlador$data, {
-    message('  ctrl ui_name: ', controlador$ui_name,
-            ' - name: ', name, '   - ctrl$name: ', controlador$name)
-	  message('ctrl data (1): ', head(controlador$data,1))
-	  message('token: ', token)
-	  browser()
-	  if (is.null(controlador$data)) {
-	    return()
-	  } else {
-	    browser()  # novo teste para zerar o controlador
-	    ctrl <- shiny::isolate(controlador)
-	    shiny::isolate({controlador <- list()})
-	    # pega dados
-	    shiny::isolate({ 
-	      message('Lendo parametros em :', paste0(ctrl$ui_name,'_',ctrl$token))
-	      lstp <- savePar$param[[paste0(ctrl$ui_name,'_',ctrl$token)]]
-	      #lstp2 <- list.par[paste0(controlador$ui_name)]
-	    })
-	    
-	    message (' **** shiny::observeEvent(controlador$data - lstp')
-	    message(print(names(lstp)))
-	    message(print (' ***************** '))
-	    shiny::isolate({
-  	    name <- lstp$name
-  	    view.cols <- lstp$view.cols
-  	    view.label.cols <- lstp$view.label.cols
-  	    edit.cols <- lstp$edit.cols
-  	    edit.label.cols <- lstp$edit.label.cols
-  	    edit.require.cols <-  lstp$edit.require.cols
-  	    edit.require.label <- lstp$edit.require.label
-  	    input.types <- lstp$input.types
-  	    input.choices <- lstp$input.choices
-  	    selectize <- lstp$selectize
-  	    modal.size <- lstp$modal.size
-  	    text.width <- lstp$text.width
-  	    textarea.width <- lstp$textarea.width
-  	    textarea.height <- lstp$textarea.height
-  	    date.width <- lstp$date.width
-  	    date.format <- lstp$date.format
-  	    numeric.width <- lstp$numeric.width
-  	    select.width <- lstp$select.width
-  	    defaultPageLength <- lstp$defaultPageLength
-  	    title.delete <- lstp$title.delete
-  	    title.delete.confirmation <- lstp$title.delete.confirmation
-  	    title.edit <- lstp$title.edit
-  	    title.add <- lstp$title.add
-  	    label.delete <- lstp$label.delete
-  	    label.edit <- lstp$label.edit
-  	    label.add <- lstp$label.add
-  	    label.copy <- lstp$label.copy
-  	    label.cancel <- lstp$label.cancel
-  	    label.save <- lstp$label.save
-  	    show.delete <- lstp$show.delete
-  	    show.update <- lstp$show.update
-  	    show.insert <- lstp$show.insert
-  	    show.copy <- lstp$show.copy
-  	    callback.delete <- lstp$callback.delete
-  	    callback.update <- lstp$callback.update
-  	    callback.insert <- lstp$callback.insert
-  	    click.time.threshold <- lstp$click.time.threshold
-  	    datatable.options <- lstp$datatable.options
-  	    dt.proxy <- lstp$dt.proxy
-  	    token <- lstp$token
-	    })
-	    
-	    browser()
-	    message('- ctrl data token: ', token)
-	    message('- ctrl name: ', name)
-	    
-	    thedata <- shiny::isolate( ctrl$data )
-	    DataTableName <- paste0(name, 'dt')
-	    
-	    
-	    #inputTypes <- inputTypes.go(thedata, edit.cols, input.types)
-	    thedata <- list2char(thedata)
-	    shiny::isolate(result$thedata <- thedata)
-	    #
-	    updateData(dt.proxy,
-	               thedata[,view.cols],
-	               rownames = FALSE) 
-	  }
-	})	# shiny:observe()
-	
-	result <- shiny::reactiveValues()
 
-	shiny::isolate({  	# novo teste - isolate
-  	result$thedata <- thedata
-  	result$view.cols <- view.cols
-  	result$view.label.cols <- view.label.cols
-  	result$edit.cols <- edit.cols
-	})
-	
 
 
 
@@ -630,21 +489,51 @@ dtedit2 <- function(input, output,
 	output[[DataTableName]] <- DT::renderDataTable({
 		thedata[,view.cols]
 	}, options = datatable.options, server=TRUE, selection='single', rownames=FALSE, colnames = view.label.cols )
+	shiny::outputOptions(output, DataTableName, suspendWhenHidden = FALSE)
 
 	output[[paste0(name, '_message')]] <- shiny::renderText('')
 
+	
+	
+	##### Build the UI for the DataTable and buttons ###########################
+	build.ui <- function(name, DataTableName, 
+	                     show.insert, show.update, show.delete, show.copy,
+	                     label.add, label.edit, label.delete, label.copy ) {
+	  browser()
+	  message("output[[name]]: ", name)
+	  message('DataTableName: ',DataTableName)
+	  message('name: ', name)
+
+	  tmpT <- shiny::renderUI({
+	    ns <- session$ns # namespace for module
+	    shiny::div(
+	      if(show.insert) { shiny::actionButton(ns(paste0(name, '_add')), label.add) },
+	      if(show.update) { shiny::actionButton(ns(paste0(name, '_edit')), label.edit) },
+	      if(show.delete) { shiny::actionButton(ns(paste0(name, '_remove')), label.delete) },
+	      if(show.copy) { shiny::actionButton(ns(paste0(name, '_copy')), label.copy) },
+	      shiny::br(), shiny::br(), DT::dataTableOutput(ns(DataTableName))
+	    )
+	  })
+	  return (tmpT)
+	}
+	
+	
+	
+	
+	
 	##### Build the UI for the DataTable and buttons ###########################
 	output[[ui_output]] <- build.ui(name, DataTableName, 
 	                           show.insert, show.update, show.delete, show.copy,
 	                           label.add, label.edit, label.delete, label.copy )
+	shiny::outputOptions(output, ui_output, suspendWhenHidden = FALSE)
 	
 	
-	###########
+	###### ADD MODAL #####################################################
 	
 	addModal <- function(row, values) {
-
+	  ns <- session$ns
 	  output[[paste0(name, '_message')]] <- shiny::renderText('')
-	  fields <- getFields('_add_', values,
+	  fields <- getFields(session, '_add_', values,
 	                      edit.cols, edit.require.cols,
 	                      edit.label.cols, inputTypes, name, 
 	                      date.format, date.width, input.choices,
@@ -652,10 +541,11 @@ dtedit2 <- function(input, output,
 	                      textarea.width, textarea.height, text.width,
 	                      selectize)
 	  shiny::modalDialog(title = title.add,
-	                     shiny::div(shiny::textOutput(paste0(name, '_message')), style='color:red'),
+	                     shiny::div(shiny::textOutput(ns(paste0(name, '_message'))), style='color:red'),
 	                     fields,
 	                     footer = shiny::column(shiny::modalButton(label.cancel), #'Cancel'
-	                                            shiny::actionButton(paste0(name, '_insert'), label.save), #'Save'
+	                                            shiny::actionButton(ns(paste0(name, '_insert')),
+	                                            label.save), #'Save'
 	                                            width=12),
 	                     size = modal.size
 	  )
@@ -738,13 +628,31 @@ dtedit2 <- function(input, output,
 			}
 		}
 	})
+  
+  ##### React to changes in 'thedataf' if that variable is a reactive ######
+  
+  if (shiny::is.reactive(thedataf)) {
+    browser()
+    shiny::observeEvent(thedataf(), {
+      result$thedata <- as.data.frame(shiny::isolate(thedataf()))
+      updateData(dt.proxy,
+                 result$thedata[,view.cols, drop=FALSE],
+                 # was "result$thedata[,view.cols]",
+                 # but that returns vector (not dataframe)
+                 # if view.cols is only a single column
+                 rownames = FALSE)
+    })
+  }
+  
+  
 
 	##### Update functions #####################################################
 
   editModal <- function(row) {
+    ns <- session$ns
     output[[paste0(name, '_message')]] <- shiny::renderText('')
     shiny::isolate({
-      fields <- getFields('_edit_', values=result$thedata[row,],
+      fields <- getFields(session, '_edit_', values=result$thedata[row,],
                         edit.cols, edit.require.cols,
                         edit.label.cols, inputTypes, name, 
                         date.format, date.width, input.choices,
@@ -753,10 +661,10 @@ dtedit2 <- function(input, output,
                         selectize)
       })
     shiny::modalDialog(title = title.edit,
-                       shiny::div(shiny::textOutput(paste0(name, '_message')), style='color:red'),
+                       shiny::div(shiny::textOutput(ns(paste0(name, '_message'))), style='color:red'),
                        fields,
                        footer = shiny::column(shiny::modalButton(label.cancel), # CANCEL
-                                              shiny::actionButton(paste0(name, '_update'), label.save), #Save
+                                              shiny::actionButton(ns(paste0(name, '_update')), label.save), #Save
                                               width=12),
                        size = modal.size
     )
@@ -836,6 +744,7 @@ dtedit2 <- function(input, output,
 
 
 	deleteModal <- function(row) {
+	  ns <- session$ns 
 	  fields <- list()
 	  # TODO - Put Description, no field names.
 	  # TODO - Format Text
@@ -844,11 +753,14 @@ dtedit2 <- function(input, output,
   	    fields[[i]] <- shiny::div(paste0(i, ' = ', result$thedata[row,i]))
   	  }
 	  })
+	  output[[paste0(name, '_message')]] <- shiny::renderText('')
 	  shiny::modalDialog(title = title.delete,
+	                     shiny::div(shiny::textOutput(ns(paste0(name, '_message'))), style='color:red'),
 	                     shiny::p(title.delete.confirmation), # 'Are you sure you want to delete this record?'
 	                     fields,
 	                     footer = shiny::column(shiny::modalButton(label.cancel), #CANCEL
-	                                            shiny::actionButton(paste0(name, '_delete'), label.delete), # 'Delete'
+	                                            shiny::actionButton(ns(paste0(name, '_delete')),
+	                                                                label.delete), # 'Delete'
 	                                            width=12),
 	                     size = modal.size
 	  )
