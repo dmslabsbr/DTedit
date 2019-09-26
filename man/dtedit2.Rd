@@ -4,7 +4,7 @@
 \alias{dtedit2}
 \title{Function to create a DataTable with Add, Edit, and Delete buttons.}
 \usage{
-dtedit2(input, output, session, token, thedataf,
+dtedit2(input, output, session, thedataf,
   view.cols = names(shiny::isolate(if (shiny::is.reactive(thedataf)) {   
    thedataf() } else {     thedataf })),
   view.label.cols = shiny::isolate(view.cols),
@@ -131,6 +131,12 @@ See \link{https://rstudio.github.io/DT/options.html} for more information.}
 \item{name}{the name of the UI output. That is, put \code{uiOutput(name)} where
 you want the DataTable in \code{ui.R}. When using more that one \code{dtedit}
 within a Shiny application the name must be unique.}
+}
+\value{
+Returns a list of reactive values. \code{return_values$data()} contains
+ the current state of DTedit's copy of the data. \code{return_values$edit.count()}
+ contains the number of edits done within DTedit (does not include changes to DTedit's
+ copy of the data secondary to changes in \code{thedataframe}, if \code{thedataframe} is a reactive)
 }
 \description{
 This object will maintain data state. However, in order of the data to persist

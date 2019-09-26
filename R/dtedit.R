@@ -4,7 +4,7 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.23-t-6'
+  res <- '0.0.24'
   return(res)
 }
 
@@ -24,27 +24,14 @@ update.click <- NA
 #'
 #' @param id the namespace of the module
 #' @family Datatable Edit functions
-#' @seealso \code{\link{dtedit}} : the companion server-component function.\cr
-#!
-#'  \itemize{
-#'  \item \code{example("dtedit")} for a simple example.
-#'  \item \code{example("dteditUI")} for a simple example with reactive dataframe
-#'  \item \code{dtedit_demo()} for a more complex example. Includes database interaction
-#'  and interactions between the data of multiple datatables.
-#'  }
-#' @example inst/examples/example_reactivedataframe.R
+#' @example inst/shiny_demo/app-tst2.R
 #' @export
 dteditUI <- function(id) {
-  
-  browser()
   ns <- shiny::NS(id)
   shiny::tagList(
     shiny::uiOutput(ns("editdt"))
   )
 }
-
-
-
 
 # check dtedit2 parameters
 dataCheck <- function(thedata, edit.cols, edit.label.cols, view.cols, view.label.cols, edit.require.cols) {
@@ -258,6 +245,11 @@ checkReq <- function(input, tag,
 #' returned that will become the current state of the data table. If anything
 #' else is returned then the internal \code{data.frame} will be used.
 #'
+#' @return Returns a list of reactive values. \code{return_values$data()} contains
+#'  the current state of DTedit's copy of the data. \code{return_values$edit.count()}
+#'  contains the number of edits done within DTedit (does not include changes to DTedit's
+#'  copy of the data secondary to changes in \code{thedataframe}, if \code{thedataframe} is a reactive)
+#'
 #' @param input Shiny input object passed from the server.
 #' @param output Shiny output object passed from the server.
 #' @param session Shiny output object passed from the server.
@@ -325,8 +317,6 @@ checkReq <- function(input, tag,
 #' @export
 dtedit2 <- function(input, output,
            session,
-           token,
-           #name,
            thedataf,
 				   view.cols = names(shiny::isolate(if(shiny::is.reactive(thedataf)) {thedataf()} else {thedataf})),
 				   view.label.cols = shiny::isolate(view.cols),
@@ -372,7 +362,7 @@ dtedit2 <- function(input, output,
   message("* DtEdit2 Version  : ", version())
   message('- data - format    : ', date.format)
   message('- Current namespace: ', getAnywhere('input')$where)
-  message('- session (token)  : ', format(token))
+  #message('- session (token)  : ', format(token))
   #message('- running          : ', running(name))
   #message('- param name       : ', name)
   
@@ -384,15 +374,16 @@ dtedit2 <- function(input, output,
   
   browser()
   # TODO NEED TO CORRECT
-  view.label.cols <- view.cols
-  edit.require.cols <- NULL
-  session <- shiny::getDefaultReactiveDomain()
+  #view.label.cols <- view.cols
+  #edit.require.cols <- NULL
+  #session <- shiny::getDefaultReactiveDomain()
   
   # Some basic parameter checking
   dataCheck(thedata, edit.cols, edit.label.cols, view.cols, view.label.cols, edit.require.cols)
   
   name <- "editdt"
   ui_output = name
+  
   #name <- paste0(name, '_', token)
   
   DataTableName <- paste0(name, 'dt')
@@ -404,61 +395,11 @@ dtedit2 <- function(input, output,
   result$view.cols <- view.cols
   result$view.label.cols <- view.label.cols
   result$edit.cols <- edit.cols
+  result$edit.count <- 0 # number of edits (Add/Delete/Edit/Copy) through dtedit
   
   #dt.proxy <- DT::dataTableProxy(DataTableName, session = session)
   dt.proxy <- DT::dataTableProxy(DataTableName)
   
-  #save parameters for update
-  # shiny::isolate({
-  #   lst_param <- list(
-  #     #input = input, output = output,
-  #     name = name,
-  #     view.cols = view.cols,
-  #     view.label.cols = view.label.cols,
-  #     edit.cols = edit.cols,
-  #     edit.label.cols = edit.label.cols,
-  #     edit.require.cols =  edit.require.cols,
-  #     edit.require.label = edit.require.label,
-  #     input.types = input.types,
-  #     input.choices = input.choices,
-  #     selectize = selectize,
-  #     modal.size = modal.size,
-  #     text.width = text.width,
-  #     textarea.width = textarea.width,
-  #     textarea.height = textarea.height,
-  #     date.width = date.width,
-  #     date.format = date.format,
-  #     numeric.width = numeric.width,
-  #     select.width = select.width,
-  #     defaultPageLength = defaultPageLength,
-  #     title.delete = title.delete,
-  #     title.delete.confirmation = title.delete.confirmation,
-  #     title.edit = title.edit,
-  #     title.add = title.add ,
-  #     label.delete = label.delete,
-  #     label.edit = label.edit,
-  #     label.add = label.add,
-  #     label.copy = label.copy,
-  #     label.cancel = label.cancel,
-  #     label.save = label.save,
-  #     show.delete = show.delete,
-  #     show.update = show.update,
-  #     show.insert = show.insert,
-  #     show.copy = show.copy,
-  #     callback.delete = callback.delete,
-  #     callback.update = callback.update,
-  #     callback.insert = callback.insert,
-  #     click.time.threshold = click.time.threshold, 
-  #     datatable.options = datatable.options,
-  #     dt.proxy = dt.proxy,
-  #     token = token,
-  #     env = environment(),
-  #     envpar = parent.env(environment()))
-  # })
-  
-
-  
-
   #message('values: ', (isolate(print(reactiveValuesToList(input)))))
   #message('outs: ', print(shiny::outputOptions(output)))
   
@@ -475,10 +416,6 @@ dtedit2 <- function(input, output,
     DT::replaceData(proxy, data, ...)
   }
   
-
-
-
-
 
 	#put correct inputTypes
 	inputTypes <- inputTypes.go(thedata, edit.cols, input.types)
@@ -607,6 +544,7 @@ dtedit2 <- function(input, output,
   			updateData(dt.proxy,
   						result$thedata[,view.cols],
   						rownames = FALSE)
+			  result$edit.count <- result$edit.count + 1
 			})
 			shiny::removeModal()
 			return(TRUE)
@@ -727,6 +665,7 @@ dtedit2 <- function(input, output,
   					updateData(dt.proxy,
   								result$thedata[,view.cols],
   								rownames = FALSE)
+  					result$edit.count <- result$edit.count + 1
 					})
 					shiny::removeModal()
 					return(TRUE)
@@ -789,6 +728,7 @@ dtedit2 <- function(input, output,
   				updateData(dt.proxy,
   							result$thedata[,view.cols],
   							rownames = FALSE)
+  				result$edit.count <- result$edit.count + 1
   				shiny::removeModal()
   				return(TRUE)
   			}
@@ -797,7 +737,9 @@ dtedit2 <- function(input, output,
 		return(FALSE)
 	})
 	
-	return(result)
+	#return(result)
+	return(list(thedata = reactive({result$thedata}),
+	            edit.count = reactive({result$edit.count})))
 }
 
 # internal functions
@@ -812,6 +754,4 @@ nothing <- function() {
   devtools::build()
   devtools::build(binary = TRUE, args = c('--preclean'))
 }
-
-
 

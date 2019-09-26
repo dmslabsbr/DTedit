@@ -7,8 +7,11 @@
 **Orginial Author:** Jason Bryer, Ph.D.
 **Email:** jason@bryer.org
 
+
 #### New version by DMS
 Use the `devtools` package to install the development version of `DTedit`:
+
+#### External update based on code from DavidPatShuiFong/DTedit
 
 ```r
 devtools::install_github('dmslabsbr/dtedit2')
