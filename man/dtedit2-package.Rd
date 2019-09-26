@@ -9,7 +9,8 @@
 This package extends the DT::DataTable to allow users to create, edit, and delete
     rows from the data table. It is a fork of jbryer/DTedit.
 
-Editable DataTables for shiny apps
+This package extends the DT::DataTable to allow users to create, edit, and delete
+    rows from the data table. It is a fork of jbryer/DTedit.
 }
 \author{
 \strong{Maintainer}: Daniel \email{suporte@neoage.com.br}
@@ -28,9 +29,4 @@ Authors:
 }
 
 }
-\keyword{DT}
-\keyword{DTedit}
-\keyword{DataTable}
 \keyword{internal}
-\keyword{package}
-\keyword{shiny}

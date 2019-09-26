@@ -357,27 +357,18 @@ dtedit2 <- function(input, output,
 				   datatable.options = list(pageLength = defaultPageLength)
 ) {
 
-  browser()
-  
   message("* DtEdit2 Version  : ", version())
   message('- data - format    : ', date.format)
   message('- Current namespace: ', getAnywhere('input')$where)
-  #message('- session (token)  : ', format(token))
-  #message('- running          : ', running(name))
-  #message('- param name       : ', name)
+  message('- session (token)  : ', format(session$token))
   
   # if a reactive has been passed, obtain the value
   thedata <- if(shiny::is.reactive(shiny::isolate(thedataf)))
     {shiny::isolate(thedataf())} else {thedataf}
   
-  message("- the Data (2): ", head(thedata,2))
+  message("- the Data (1): ", head(thedata,1))
   
-  browser()
-  # TODO NEED TO CORRECT
-  #view.label.cols <- view.cols
-  #edit.require.cols <- NULL
-  #session <- shiny::getDefaultReactiveDomain()
-  
+
   # Some basic parameter checking
   dataCheck(thedata, edit.cols, edit.label.cols, view.cols, view.label.cols, edit.require.cols)
   
@@ -397,17 +388,12 @@ dtedit2 <- function(input, output,
   result$edit.cols <- edit.cols
   result$edit.count <- 0 # number of edits (Add/Delete/Edit/Copy) through dtedit
   
-  #dt.proxy <- DT::dataTableProxy(DataTableName, session = session)
   dt.proxy <- DT::dataTableProxy(DataTableName)
-  
-  #message('values: ', (isolate(print(reactiveValuesToList(input)))))
-  #message('outs: ', print(shiny::outputOptions(output)))
   
   # internal functions
   
   updateData <- function(proxy, data, ...) {
     # Convert any list columns to characters before displaying
-    browser()
     for(i in 1:ncol(data)) {
       if(is.list(data[,i])) {
         data[,i] <- sapply(data[,i], FUN = function(x) { paste0(x, collapse = ', ') })
@@ -436,10 +422,9 @@ dtedit2 <- function(input, output,
 	build.ui <- function(name, DataTableName, 
 	                     show.insert, show.update, show.delete, show.copy,
 	                     label.add, label.edit, label.delete, label.copy ) {
-	  browser()
-	  message("output[[name]]: ", name)
-	  message('DataTableName: ',DataTableName)
-	  message('name: ', name)
+	  #message("output[[name]]: ", name)
+	  #message('DataTableName: ',DataTableName)
+	  #message('name: ', name)
 
 	  tmpT <- shiny::renderUI({
 	    ns <- session$ns # namespace for module
@@ -570,7 +555,6 @@ dtedit2 <- function(input, output,
   ##### React to changes in 'thedataf' if that variable is a reactive ######
   
   if (shiny::is.reactive(thedataf)) {
-    browser()
     shiny::observeEvent(thedataf(), {
       result$thedata <- as.data.frame(shiny::isolate(thedataf()))
       updateData(dt.proxy,
@@ -581,7 +565,6 @@ dtedit2 <- function(input, output,
                  rownames = FALSE)
     })
   }
-  
   
 
 	##### Update functions #####################################################
@@ -737,9 +720,10 @@ dtedit2 <- function(input, output,
 		return(FALSE)
 	})
 	
-	#return(result)
+	# return token to know the actual session
 	return(list(thedata = reactive({result$thedata}),
-	            edit.count = reactive({result$edit.count})))
+	            edit.count = reactive({result$edit.count}),
+	            token = session$token))
 }
 
 # internal functions
@@ -747,9 +731,9 @@ dtedit2 <- function(input, output,
 nothing <- function() {
   # cmd clear and rebuild
   devtools::document()
-  devtools::install()
   usethis::use_package_doc()
-  devtools::document()
+  devtools::load_all('.')
+  devtools::install()
   shiny::runApp('inst/shiny_demo/app-tst.R')
   devtools::build()
   devtools::build(binary = TRUE, args = c('--preclean'))

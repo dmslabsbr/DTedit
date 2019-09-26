@@ -68,28 +68,19 @@ books.delete.callback <- function(data, row) {
 
 ##### Create the Shiny server
 #server <- function(input, output, session) {
-server <- function(input, output) {
+server <- function(input, output, session) {
 	books <- reactiveVal()
 	books(getBooks())
-	
-	#token <- session$token
-	#message('session$token: ', token )
-	token <- 'abc'
-	
-	browser()
 
+	token <- session$token
 	
-	#output$info <- shiny::renderUI({
-	#  shiny::br()
-	#  paste0('token: ', print(token))
-	#  shiny::br()
-	#  paste0('time: ', Sys.time(), ' token: ', token )
-	#})
+	output$info <- shiny::renderUI({
+	  shiny::br()
+	  paste0('token: ', print(token))
+	  shiny::br()
+	  paste0('time: ', Sys.time(), ' token: ', token )
+	})
 	
-	
-	#shiny::observeEvent(input$btn, {
-	  
-	  browser()
 	  
 	  # get books not reactive
 	  nr.books <- if(shiny::is.reactive(shiny::isolate(books))) {
@@ -99,10 +90,7 @@ server <- function(input, output) {
 	  p.input.choices <- list(Authors = unique(unlist(nr.books$Authors)))
 	  p.view.cols <- names(nr.books[c(5,1,3)])
 
-	  result_DT <- callModule (module = dtedit2::dtedit2, id = 'dataspace', input = input, output = output,
-	                   #session = session,
-	                   token = token,
-	                   #name = 'dataspace',
+	  result_DT <- callModule (dtedit2, 'dataspace', # input = input, output = output,
 	                   thedataf = books,
 	                   view.cols = p.view.cols,
 	                   edit.cols = c('Title', 'Authors', 'Date', 'Publisher'),
@@ -111,55 +99,44 @@ server <- function(input, output) {
 	                   input.choices = p.input.choices,
 	                   callback.update = books.update.callback,
 	                   callback.insert = books.insert.callback,
-	                   callback.delete = books.delete.callback)
+	                   callback.delete = books.delete.callback
+	                   )
 	  
-	  
-	#})
 	
-	#names <- data.frame(Name=character(), Email=character(), Date=numeric(),
-	#					Type = factor(levels=c('Admin', 'User')),
-	#					stringsAsFactors=FALSE)
-	#names$Date <- as.Date(names$Date, origin='1970-01-01')
-	#namesdt <- 	dtedit2::dtedit2(input = input,
-	#                             output = output, 
-	#                             session = session,
-	#                             token = token,
-	#                             name = 'names',
-	#                             thedata = names, input.types =  c(Name='textInput'))
-	
-	shiny::observeEvent(input$btn2, {
-	  #message('outs: ', print(shiny::outputOptions(output)))
-	  browser()
-	  message('observe event click btn2')
-	  #shiny::isolate(print(shiny::reactiveValuesToList(input)))
-	  dtedit2::updateDados(dados = head(books,3),
-	                       ui_name = 'books',
-	                       token = token)
+	shiny::observeEvent(input$btn, {
+	  message('observe event click btn')
+	  message('Change data')
+	  temp <- isolate(books())
+	  if (nrow(temp) <= 1) {return(NULL)}
+	  temp <- head(temp, nrow(temp)-1) # remove 1 item
+	  if (min(temp$id) == temp$id[1]) {
+	    temp <- temp[order(-temp$id),] # invert order
+	  } else {
+	    temp <- temp[order(temp$id),] # invert order
+	  }
+    books(temp) # change table
+    message('Change ok')
 	})
 	
-	shiny::observeEvent(input$btn3, {
-	  browser()
-	  message('observe event click btn3')
-	  #shiny::isolate(print(shiny::reactiveValuesToList(input)))
-	  dtedit2::updateDados(dados = head(names,2),
-	                       ui_name = 'names',
-	                       token = token)
+	observe({
+	  # only reacts to change in $edit.count()
+	  print(paste("Edit count:", result_DT$edit.count())) 
+	  print(paste("token:", shiny::isolate(result_DT$token)))
+    if (shiny::isolate(result_DT$edit.count()) == 0 ) {return (NULL)}
+	  books(isolate(as.data.frame(result_DT$thedata(), stringsasfactors = FALSE)))
 	})
 	
-		
+
 }
 
 ##### Create the shiny UI
 ui <- shiny::fluidPage(shiny::uiOutput('info'),
                        shiny::br(''),
-                       shiny::actionButton('btn', 'Show Table'),
-                       shiny::actionButton('btn2', 'Update Table Books'),
-                       shiny::actionButton('btn3', 'Update Table Names'),
-                       shiny::actionButton('btn4', 'use Reactive'),
+                       shiny::actionButton('btn', 'Update Table Books'),
                        shiny::br(''),
   shiny::h3('Books'),
   dtedit2::dteditUI("dataspace"),
-  shiny::hr(), shiny::h3('Email Addresses')
+  shiny::hr()
 )
 
 shiny::shinyApp(ui = ui, server = server)

@@ -69,9 +69,8 @@ server <- function(input, output, session) {
     new.fruit <- data.frame(Column1 = c("Banana", "Raspberries", "Tangerine"),
                         Column2 = c("Ice Cream", "Yoghurt", "Candy"),
                         stringsAsFactors = FALSE)
-    
-    
     data2(new.fruit) # adjusted dataframe 'automatically' read by DTedit
+    print("ok")
   })
   
 }
