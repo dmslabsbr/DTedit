@@ -9,6 +9,20 @@ server <- function(input, output, session) {
                       Column2 = c("Pie", "Tart", "Yoghurt"),
                       stringsAsFactors = FALSE)
   
+  now <- Sys.time()
+  mult <- 80000
+  dates_seq <- data.frame(Column1 = c(now,
+                                  (now + mult),
+                                  (now + mult * 2),
+                                  (now + mult * 3),
+                                  (now + mult * 4)),
+                        Column2 = c('Data 1', 'Data 2', 'Data 3', 'Data 4', 'Data 5'))
+  
+  dates_seq2 <- data.frame(Column1 = as.Date(now) + 1:6 * 100,
+                           Column2 = c('Data 1', 'Data 2', 'Data 3',
+                                       'Data 4', 'Data 5', 'Data 6'))
+  
+  
   data <- reactiveVal() # # 'data' will be a 'reactive' dataframe
   data(fruit)
   
@@ -16,12 +30,18 @@ server <- function(input, output, session) {
   data2(fruit)
   
   data_DT_gui <- callModule(dtedit2, 'dataspace',
-                           thedataf = data, 
-                            edit.cols = c("Column1", "Column2")
+                            thedataf = data, 
+                             edit.cols = c("Column1", "Column2")
   )
   data_DT_gui2 <- callModule(dtedit2, 'dataspace2',
-                            thedataf = data2, 
-                            edit.cols = c("Column1", "Column2")
+                             thedataf = data2, 
+                             edit.cols = c("Column1", "Column2")
+  )
+  data_DT_gui3 <- callModule(dtedit2, 'dataspace3',
+                             thedataf = dates_seq2, 
+                             edit.cols = c("Column1", "Column2"),
+                             date.format = 'dd-mm-yyyy',
+                             date.method = 'toLocaleDateString'
   )
   
   observe({
@@ -64,7 +84,9 @@ ui <- fluidPage(
   actionButton("data_scramble", "Scramble an entry"),
   h1('dataspace2'),
   dteditUI("dataspace2"),
-  actionButton("data2_change", "Change data2")
+  actionButton("data2_change", "Change data2"),
+  h1('dataspace3'),
+  dteditUI("dataspace3")
 )
 
 shinyApp(ui = ui, server = server)

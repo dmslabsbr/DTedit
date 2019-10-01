@@ -1,10 +1,12 @@
+#TODO make it works like a normal DTedit,too, but no reactive.
+
 #' Show dtedit version
 #'
 #' @return version
 #'
 #' @export
 version <- function() {
-  res <- '0.0.24'
+  res <- '0.0.25'
   return(res)
 }
 
@@ -44,7 +46,8 @@ dataCheck <- function(thedata, edit.cols, edit.label.cols, view.cols, view.label
   } else if (!all(view.cols %in% names(thedata))) {
     stop('Not all view.cols are in the data.')
   } else if (!all(edit.cols %in% names(thedata))) {
-    stop('Not all edit.cols are in the data.')
+    stop('Not all edit.cols are in the data. \n edit.cols: ', edit.cols,
+         '\n names-thedata: ', names(thedata))
   }
   if (!all(edit.require.cols %in% names(thedata))) {
     stop('a edit.require.cols not in the data')
@@ -64,6 +67,29 @@ list2char <- function(thedata) {
   return(thedata)
 }
 
+# Get date coluns number
+getDateCols <- function(thedata, type = 'name') {
+  datatypes <- c('Date', "POSIXct", "POSIXlt" )
+  tmp <- c()
+  if (is.null(ncol(thedata))) {
+    stop ('thedata must be a multidimensional data.')
+  }
+  for (i in 1:ncol(thedata)) {
+    day <- thedata[1,i]
+    #message('day: ', day, ' - Class:', class(day))
+    if (class(day) %in% datatypes) {
+      if (type == 'name') {
+        column <- names(thedata[i])  
+      } else {
+        column <- i
+      }
+      
+      tmp <- c(tmp, column)
+    }
+  }
+  return(tmp)
+}
+
 
 
 valid.input.types <- c('dateInput', 'selectInput', 'numericInput',
@@ -74,13 +100,15 @@ valid.input.types <- c('dateInput', 'selectInput', 'numericInput',
 inputTypes.go <- function(thedata, edit.cols, input.types ) {
   
   inputTypes <- sapply(thedata[,edit.cols], FUN=function(x) {
-    switch(class(x),
+    switch(class(x)[1],
            list = 'selectInputMultiple',
            character = 'textInput',
            Date = 'dateInput',
            factor = 'selectInput',
            integer = 'numericInput',
-           numeric = 'numericInput')
+           numeric = 'numericInput',
+           POSIXct = 'dateInput',
+           POSIXt = 'dateInput')
   })
   
   if(!missing(input.types)) {
@@ -287,6 +315,7 @@ checkReq <- function(input, tag,
 #' @param textarea.height the height of text area inputs.
 #' @param date.width the width of data inputs
 #' @param date.format the default for data format inputs.
+#' @param date.method the default methods for DT::formatDate.
 #' @param numeric.width the width of numeric inputs.
 #' @param select.width the width of drop down inputs.
 #' @param title.delete the title of the dialog box for deleting a row.
@@ -321,7 +350,7 @@ dtedit2 <- function(input, output,
 				   view.cols = names(shiny::isolate(if(shiny::is.reactive(thedataf)) {thedataf()} else {thedataf})),
 				   view.label.cols = shiny::isolate(view.cols),
 				   edit.cols = names(shiny::isolate(if(shiny::is.reactive(thedataf)) {thedataf()} else {thedataf})),
-				   edit.label.cols = isolate(edit.cols),
+				   edit.label.cols = shiny::isolate(edit.cols),
 				   edit.require.cols = NULL,
 				   edit.require.label = 'The following fields are required: ',
 				   input.types = c(),  # test
@@ -333,6 +362,7 @@ dtedit2 <- function(input, output,
 				   textarea.height = '200px',
 				   date.width = '100px',
 				   date.format = 'yyyy-mm-dd',
+				   date.method = NULL,  #'toLocaleDateString'
 				   numeric.width = '100px',
 				   select.width = '100%',
 				   defaultPageLength = 10,
@@ -361,12 +391,13 @@ dtedit2 <- function(input, output,
   message('- data - format    : ', date.format)
   message('- Current namespace: ', getAnywhere('input')$where)
   message('- session (token)  : ', format(session$token))
+
   
   # if a reactive has been passed, obtain the value
   thedata <- if(shiny::is.reactive(shiny::isolate(thedataf)))
     {shiny::isolate(thedataf())} else {thedataf}
   
-  message("- the Data (1): ", head(thedata,1))
+  message("- the Data (1): ", print(head(thedata,1)))
   
 
   # Some basic parameter checking
@@ -406,12 +437,42 @@ dtedit2 <- function(input, output,
 	#put correct inputTypes
 	inputTypes <- inputTypes.go(thedata, edit.cols, input.types)
 
+	# correct POSIXlt.Date for show
+	datacols <- getDateCols(thedata)
+	
 	# Convert any list columns to characters before displaying
   thedata <- list2char(thedata)
+  
+  thedata <- thedata[,view.cols]
+  
+  #removes mismatched columns
+  datacols <- datacols[datacols %in% names(thedata)]
+  
+  if (is.null(date.method)) {
+    renderedDT <- DT::renderDataTable({
+      thedata
+    }, options = datatable.options, server=TRUE, selection='single', rownames=FALSE, colnames = view.label.cols )
+  } else {
+    # thedataDT <- DT::datatable(thedata) %>% DT::formatDate(columns = datacols,
+    #                                    method = date.method) # 'toLocaleDateString'
+    # renderedDT <- DT::renderDataTable({
+    #   thedataDT # thedata[,view.cols]
+    # }, options = datatable.options, server=TRUE, selection='single', rownames=FALSE, colnames = view.label.cols )
+    
+    thedataDT <- DT::datatable(thedata,
+                               options = datatable.options,
+                               selection='single',
+                               rownames=FALSE,
+                               colnames = view.label.cols) %>% 
+      DT::formatDate(columns = datacols,
+                     method = date.method, # 'toLocaleDateString'
+                     ) 
+    renderedDT <- DT::renderDataTable({
+      thedataDT # thedata[,view.cols]
+    }, server=TRUE)
+  }
 
-	output[[DataTableName]] <- DT::renderDataTable({
-		thedata[,view.cols]
-	}, options = datatable.options, server=TRUE, selection='single', rownames=FALSE, colnames = view.label.cols )
+	output[[DataTableName]] <- renderedDT
 	shiny::outputOptions(output, DataTableName, suspendWhenHidden = FALSE)
 
 	output[[paste0(name, '_message')]] <- shiny::renderText('')

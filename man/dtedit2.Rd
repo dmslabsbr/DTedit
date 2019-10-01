@@ -10,14 +10,15 @@ dtedit2(input, output, session, thedataf,
   view.label.cols = shiny::isolate(view.cols),
   edit.cols = names(shiny::isolate(if (shiny::is.reactive(thedataf)) {   
    thedataf() } else {     thedataf })),
-  edit.label.cols = isolate(edit.cols), edit.require.cols = NULL,
+  edit.label.cols = shiny::isolate(edit.cols),
+  edit.require.cols = NULL,
   edit.require.label = "The following fields are required: ",
   input.types = c(), input.choices = NULL, selectize = TRUE,
   modal.size = "m", text.width = "100\%", textarea.width = "570px",
   textarea.height = "200px", date.width = "100px",
-  date.format = "yyyy-mm-dd", numeric.width = "100px",
-  select.width = "100\%", defaultPageLength = 10,
-  title.delete = "Delete",
+  date.format = "yyyy-mm-dd", date.method = NULL,
+  numeric.width = "100px", select.width = "100\%",
+  defaultPageLength = 10, title.delete = "Delete",
   title.delete.confirmation = "Are you sure you want to delete this record?",
   title.edit = "Edit", title.add = "New", label.delete = "Delete",
   label.edit = "Edit", label.add = "New", label.copy = "Copy",
@@ -80,6 +81,8 @@ presented to the user for data entry.}
 \item{date.width}{the width of data inputs}
 
 \item{date.format}{the default for data format inputs.}
+
+\item{date.method}{the default methods for DT::formatDate.}
 
 \item{numeric.width}{the width of numeric inputs.}
 
