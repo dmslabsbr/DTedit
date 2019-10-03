@@ -1,6 +1,7 @@
 ##### Minimal DTedit example using reactive dataframe #####
 library(shiny)
 library(dtedit2)
+library(shinyjs)
 
 ##### Create the Shiny server #####
 server <- function(input, output, session) {
@@ -31,7 +32,9 @@ server <- function(input, output, session) {
   
   data_DT_gui <- callModule(dtedit2, 'dataspace',
                             thedataf = data, 
-                             edit.cols = c("Column1", "Column2")
+                            edit.cols = c("Column1", "Column2")
+                            ,edit.cols.size = list(Column1 = 10, Column2 = 5),
+                            input.types = list(Column2 = 'textAreaInput')
   )
   data_DT_gui2 <- callModule(dtedit2, 'dataspace2',
                              thedataf = data2, 
@@ -76,7 +79,7 @@ server <- function(input, output, session) {
 }
 
 ##### Create the shiny UI ######
-ui <- fluidPage(
+ui <- fluidPage(shinyjs::useShinyjs(),
   h3("DTedit using reactive dataframe"),
   wellPanel(p("Try the 'Scramble' button!")),
   h1('dataspace'),

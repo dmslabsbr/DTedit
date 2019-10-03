@@ -5,7 +5,7 @@ Authors@R: c(person("Jason", "Bryer", email = "jason@bryer.org", role = c("aut")
              person("Daniel", "", email = "suporte@neoage.com.br", role = c("aut", "cre")))
 Description: This package extends the DT::DataTable to allow users to create, edit, and delete
     rows from the data table. It is a fork of jbryer/DTedit.
-Depends: R (>= 3.3.2), DT, shiny
+Depends: R (>= 3.3.2), DT, shiny, shinyjs
 Suggests: RSQLite, RMariaDB, DBI
 License: LGPL
 Encoding: UTF-8

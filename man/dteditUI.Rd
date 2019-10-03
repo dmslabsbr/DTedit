@@ -21,6 +21,7 @@ of the shiny app.
 ##### Minimal DTedit example using reactive dataframe #####
 library(shiny)
 library(dtedit2)
+library(shinyjs)
 
 ##### Create the Shiny server #####
 server <- function(input, output, session) {
@@ -31,14 +32,16 @@ server <- function(input, output, session) {
   
   now <- Sys.time()
   mult <- 80000
-  dates_seq <- data.frame(Column1 = c(as.POSIXlt.Date(now),
-                                  as.POSIXlt.Date(now + mult),
-                                  as.POSIXlt.Date(now + mult * 2),
-                                  as.POSIXlt.Date(now + mult * 3),
-                                  as.POSIXlt.Date(now + mult * 4)),
+  dates_seq <- data.frame(Column1 = c(now,
+                                  (now + mult),
+                                  (now + mult * 2),
+                                  (now + mult * 3),
+                                  (now + mult * 4)),
                         Column2 = c('Data 1', 'Data 2', 'Data 3', 'Data 4', 'Data 5'))
   
-  dates_seq2 <- data.frame(dates = as.Date(now) + 1:6 * 100)
+  dates_seq2 <- data.frame(Column1 = as.Date(now) + 1:6 * 100,
+                           Column2 = c('Data 1', 'Data 2', 'Data 3',
+                                       'Data 4', 'Data 5', 'Data 6'))
   
   
   data <- reactiveVal() # # 'data' will be a 'reactive' dataframe
@@ -49,16 +52,19 @@ server <- function(input, output, session) {
   
   data_DT_gui <- callModule(dtedit2, 'dataspace',
                             thedataf = data, 
+                            edit.cols = c("Column1", "Column2")
+                            ,edit.cols.size = list(Column1 = 10, Column2 = 5),
+                            input.types = list(Column2 = 'textAreaInput')
+  )
+  data_DT_gui2 <- callModule(dtedit2, 'dataspace2',
+                             thedataf = data2, 
                              edit.cols = c("Column1", "Column2")
   )
-  # data_DT_gui2 <- callModule(dtedit2, 'dataspace2',
-  #                           thedataf = data2, 
-  #                           edit.cols = c("Column1", "Column2")
-  # )
   data_DT_gui3 <- callModule(dtedit2, 'dataspace3',
-                             thedataf = dates_seq, 
+                             thedataf = dates_seq2, 
                              edit.cols = c("Column1", "Column2"),
-                             date.format = 'DD-MM-YYYY'
+                             date.format = 'dd-mm-yyyy',
+                             date.method = 'toLocaleDateString'
   )
   
   observe({
@@ -93,7 +99,7 @@ server <- function(input, output, session) {
 }
 
 ##### Create the shiny UI ######
-ui <- fluidPage(
+ui <- fluidPage(shinyjs::useShinyjs(),
   h3("DTedit using reactive dataframe"),
   wellPanel(p("Try the 'Scramble' button!")),
   h1('dataspace'),

@@ -6,9 +6,9 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.26'
+  res <- '0.0.26a7'
   return(res)
-  # 0.0.26 - Version with field size check.
+  # 0.0.26 - Version with field size check. (addJsInput)
 }
 
 
@@ -34,6 +34,28 @@ dteditUI <- function(id) {
   shiny::tagList(
     shiny::uiOutput(ns("editdt"))
   )
+}
+
+# Add maxlength to inputbox
+addJsInput <- function(session, name, typeName, edit.cols, edit.cols.size) {
+  message('addjsinput', edit.cols.size)
+  if (length(edit.cols.size) == 0) {return ()}
+  cmd <- ''
+  ns <- session$ns
+  notIn <- names(edit.cols.size[!(names(edit.cols.size) %in% edit.cols)])
+  if (length(notIn) != 0) {
+    warning ('edit.cols.size - There is not fields with this names: ', notIn);
+  }
+  for(i in names(edit.cols.size)) {   
+    col_size <- edit.cols.size[[i]]
+    if (!is.null(col_size)) {
+      ui_name <- ns(paste0(name, typeName, i))
+      jsAdd <- paste0("$('#", ui_name, "').attr('maxlength',",col_size,"); ")
+      cmd <- paste0(cmd, jsAdd)
+    }
+  }
+  message('CMSJS: ', cmd)
+  shinyjs::runjs(cmd)
 }
 
 # check dtedit2 parameters
@@ -134,7 +156,7 @@ selectInputMultiple <- function(selectize, ...) {
 
 # get fields data
 getFields <- function(session, typeName, values,
-                      edit.cols, edit.require.cols,
+                      edit.cols, edit.cols.size, edit.require.cols,
                       edit.label.cols, inputTypes, name, 
                       date.format, date.width, input.choices,
                       select.width, result, numeric.width,
@@ -142,6 +164,9 @@ getFields <- function(session, typeName, values,
                       selectize) {
   ns <- session$ns
   fields <- list()
+  
+  #browser()
+  
   for(i in seq_along(edit.cols)) {
     if (all(edit.cols[i] %in% edit.require.cols)) {
       # TODO - show * in red.
@@ -290,6 +315,7 @@ checkReq <- function(input, tag,
 #'        This can be a subset of the full \code{data.frame}.
 #' @param edit.cols character vector with the column names the user can edit/add.
 #'        This can be a subset of the full \code{data.frame}.
+#' @param edit.cols.size list with max fields sizes. Only for textAreaInput and textInput.
 #' @param edit.require.cols character vector with the column names required the user must edit/add.
 #'        This can be a subset of the full \code{data.frame}.
 #' @param edit.require.label the label of require message.
@@ -351,10 +377,11 @@ dtedit2 <- function(input, output,
 				   view.cols = names(shiny::isolate(if(shiny::is.reactive(thedataf)) {thedataf()} else {thedataf})),
 				   view.label.cols = shiny::isolate(view.cols),
 				   edit.cols = names(shiny::isolate(if(shiny::is.reactive(thedataf)) {thedataf()} else {thedataf})),
+				   edit.cols.size = list(), 
 				   edit.label.cols = shiny::isolate(edit.cols),
 				   edit.require.cols = NULL,
 				   edit.require.label = 'The following fields are required: ',
-				   input.types = c(),  # test
+				   input.types = list(),  # test
 				   input.choices = NULL,
 				   selectize = TRUE,
 				   modal.size = 'm',
@@ -518,7 +545,7 @@ dtedit2 <- function(input, output,
 	  ns <- session$ns
 	  output[[paste0(name, '_message')]] <- shiny::renderText('')
 	  fields <- getFields(session, '_add_', values,
-	                      edit.cols, edit.require.cols,
+	                      edit.cols, edit.cols.size, edit.require.cols,
 	                      edit.label.cols, inputTypes, name, 
 	                      date.format, date.width, input.choices,
 	                      select.width, result, numeric.width,
@@ -541,6 +568,7 @@ dtedit2 <- function(input, output,
   shiny::observeEvent(input[[paste0(name, '_add')]], {
 		if(!is.null(row)) {
 			shiny::showModal(addModal())
+		  addJsInput(session, name, '_add_', edit.cols, edit.cols.size)
 		}
 	})
 
@@ -610,6 +638,7 @@ dtedit2 <- function(input, output,
 			  shiny::isolate({
 				   shiny::showModal(addModal(values=result$thedata[row,]))
 			  })
+			  addJsInput(session, name, '_add_', edit.cols, edit.cols.size)
 			}
 		}
 	})
@@ -636,7 +665,7 @@ dtedit2 <- function(input, output,
     output[[paste0(name, '_message')]] <- shiny::renderText('')
     shiny::isolate({
       fields <- getFields(session, '_edit_', values=result$thedata[row,],
-                        edit.cols, edit.require.cols,
+                        edit.cols, edit.cols.size, edit.require.cols,
                         edit.label.cols, inputTypes, name, 
                         date.format, date.width, input.choices,
                         select.width, result, numeric.width,
@@ -658,6 +687,7 @@ dtedit2 <- function(input, output,
 		if(!is.null(row)) {
 			if(row > 0) {
 				shiny::showModal(editModal(row))
+			  addJsInput(session, name, '_edit_', edit.cols, edit.cols.size)
 			}
 		}
 	})
@@ -796,7 +826,7 @@ nothing <- function() {
   usethis::use_package_doc()
   devtools::load_all('.')
   devtools::install()
-  shiny::runApp('inst/shiny_demo/app-tst.R')
+  #shiny::runApp('inst/shiny_demo/app-tst.R')
   devtools::build()
   devtools::build(binary = TRUE, args = c('--preclean'))
 }
