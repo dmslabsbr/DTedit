@@ -6,8 +6,9 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.25'
+  res <- '0.0.26'
   return(res)
+  # 0.0.26 - Version with field size check.
 }
 
 
