@@ -9,7 +9,7 @@ dtedit2(input, output, session, thedataf,
    thedataf() } else {     thedataf })),
   view.label.cols = shiny::isolate(view.cols),
   edit.cols = names(shiny::isolate(if (shiny::is.reactive(thedataf)) {   
-   thedataf() } else {     thedataf })),
+   thedataf() } else {     thedataf })), edit.cols.size = list(),
   edit.label.cols = shiny::isolate(edit.cols),
   edit.require.cols = NULL,
   edit.require.label = "The following fields are required: ",
@@ -47,6 +47,8 @@ correspond to \code{view.cols}.}
 
 \item{edit.cols}{character vector with the column names the user can edit/add.
 This can be a subset of the full \code{data.frame}.}
+
+\item{edit.cols.size}{list with max fields sizes. Only for textAreaInput and textInput.}
 
 \item{edit.label.cols}{character vector with the labels to use on the edit
 and add dialogs. The length and order of \code{code.cols.labels} must
