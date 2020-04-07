@@ -6,9 +6,10 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.26'
+  res <- '0.0.27f'
   return(res)
   # 0.0.26 - Version with field size check. (addJsInput)
+  # 0.0.27 - Correct data input / Include ESCAPE function in DT.
 }
 
 
@@ -152,7 +153,7 @@ selectInputMultiple <- function(selectize, ...) {
 getFields <- function(session, typeName, values,
                       edit.cols, edit.cols.size, edit.require.cols,
                       edit.label.cols, inputTypes, name, 
-                      date.format, date.width, input.choices,
+                      date.format, date.format.db, date.width, input.choices,
                       select.width, result, numeric.width,
                       textarea.width, textarea.height, text.width,
                       selectize) {
@@ -166,9 +167,12 @@ getFields <- function(session, typeName, values,
       message('n*: ', edit.label.cols[i])
     }
     if(inputTypes[i] == 'dateInput') {
+      browser()
+      dt.sys <- as.Date(Sys.Date(),  date.format.db)
       value <- ifelse(missing(values),
-                      as.character(Sys.Date()),
+                      as.character(dt.sys),
                       as.character(values[,edit.cols[i]]))
+      value <- as.Date(value, date.format.db)
       fields[[i]] <- shiny::dateInput(ns(paste0(name, typeName, edit.cols[i])),
                                       label=edit.label.cols[i],
                                       value=value,
@@ -332,7 +336,8 @@ checkReq <- function(input, tag,
 #' @param textarea.width the width of text area inputs.
 #' @param textarea.height the height of text area inputs.
 #' @param date.width the width of data inputs
-#' @param date.format the default for data format inputs.
+#' @param date.format the default for data format inputs. data.format.db - Defautl: 'yyyy-mm-dd'
+#' @param date.format.db the default for data format inputs from database - Default: '%Y-%m-%d'
 #' @param date.method the default methods for DT::formatDate.
 #' @param numeric.width the width of numeric inputs.
 #' @param select.width the width of drop down inputs.
@@ -360,6 +365,8 @@ checkReq <- function(input, tag,
 #'        feature. For developers, a message is printed using the warning function.
 #' @param datatable.options options passed to \code{\link{DT::renderDataTable}}.
 #'        See \link{https://rstudio.github.io/DT/options.html} for more information.
+#' @param escape Escaping Table Content - The argument escape determines whether the HTML entities in the table are escaped or not.
+#'        See \link{https://rstudio.github.io/DT} for more information.
 #' @family Datatable Edit functions
 #' @export
 dtedit2 <- function(input, output,
@@ -381,6 +388,7 @@ dtedit2 <- function(input, output,
 				   textarea.height = '200px',
 				   date.width = '100px',
 				   date.format = 'yyyy-mm-dd',
+				   date.format.db = '%Y-%m-%d',
 				   date.method = NULL,  #'toLocaleDateString'
 				   numeric.width = '100px',
 				   select.width = '100%',
@@ -403,7 +411,8 @@ dtedit2 <- function(input, output,
 				   callback.update = function(data, olddata, row) { },
 				   callback.insert = function(data, row) { },
 				   click.time.threshold = 2, # in seconds
-				   datatable.options = list(pageLength = defaultPageLength)
+				   datatable.options = list(pageLength = defaultPageLength),
+				   escape = FALSE
 ) {
 
   message("* DtEdit2 Version  : ", version())
@@ -417,7 +426,6 @@ dtedit2 <- function(input, output,
     {shiny::isolate(thedataf())} else {thedataf}
   
   message("- the Data (1): ", print(head(thedata,1)))
-  
 
   # Some basic parameter checking
   dataCheck(thedata, edit.cols, edit.label.cols, view.cols, view.label.cols, edit.require.cols)
@@ -470,7 +478,7 @@ dtedit2 <- function(input, output,
   if (is.null(date.method)) {
     renderedDT <- DT::renderDataTable({
       thedata
-    }, options = datatable.options, server=TRUE, selection='single', rownames=FALSE, colnames = view.label.cols )
+    }, escape = escape, options = datatable.options, server=TRUE, selection='single', rownames=FALSE, colnames = view.label.cols )
   } else {
     # thedataDT <- DT::datatable(thedata) %>% DT::formatDate(columns = datacols,
     #                                    method = date.method) # 'toLocaleDateString'
@@ -481,6 +489,7 @@ dtedit2 <- function(input, output,
     thedataDT <- DT::datatable(thedata,
                                options = datatable.options,
                                selection='single',
+                               escape = escape,
                                rownames=FALSE,
                                colnames = view.label.cols) %>% 
       DT::formatDate(columns = datacols,
@@ -488,7 +497,7 @@ dtedit2 <- function(input, output,
                      ) 
     renderedDT <- DT::renderDataTable({
       thedataDT # thedata[,view.cols]
-    }, server=TRUE)
+    }, escape = escape, server=TRUE)
   }
 
 	output[[DataTableName]] <- renderedDT
@@ -538,7 +547,7 @@ dtedit2 <- function(input, output,
 	  fields <- getFields(session, '_add_', values,
 	                      edit.cols, edit.cols.size, edit.require.cols,
 	                      edit.label.cols, inputTypes, name, 
-	                      date.format, date.width, input.choices,
+	                      date.format, date.format.db, date.width, input.choices,
 	                      select.width, result, numeric.width,
 	                      textarea.width, textarea.height, text.width,
 	                      selectize)
@@ -652,13 +661,14 @@ dtedit2 <- function(input, output,
 	##### Update functions #####################################################
 
   editModal <- function(row) {
+    browser()
     ns <- session$ns
     output[[paste0(name, '_message')]] <- shiny::renderText('')
     shiny::isolate({
       fields <- getFields(session, '_edit_', values=result$thedata[row,],
                         edit.cols, edit.cols.size, edit.require.cols,
                         edit.label.cols, inputTypes, name, 
-                        date.format, date.width, input.choices,
+                        date.format, date.format.db, date.width, input.choices,
                         select.width, result, numeric.width,
                         textarea.width, textarea.height, text.width,
                         selectize)
