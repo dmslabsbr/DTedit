@@ -6,7 +6,7 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.27f'
+  res <- '0.0.27h'
   return(res)
   # 0.0.26 - Version with field size check. (addJsInput)
   # 0.0.27 - Correct data input / Include ESCAPE function in DT.
@@ -72,6 +72,24 @@ dataCheck <- function(thedata, edit.cols, edit.label.cols, view.cols, view.label
   }
 }
 
+
+# remove colunas de uma dataframe
+# remove_vt = FALSE, mantem as que estão listadas em vt_colunas e
+# remove os que não estão.
+# remove_vt = TRUE, remove as que estão listadas em vt_Colunas e 
+# mantem o restante.
+f_remove_columns <- function (df_dados, vt_colunas, remove_vt = FALSE) {
+  if (class(df_dados) != "data.frame") { warning("df_dados must be a data.frame")} 
+  for (i in names(df_dados)) {
+    achou <- i %in% vt_colunas
+    if (remove_vt) {
+      if (achou) { df_dados[i] <- NULL}
+    } else {
+      if (!achou) {df_dados[i] <- NULL}
+    }
+  }
+  return (df_dados)
+}
 
 # Convert any list columns to characters before displaying
 list2char <- function(thedata) {
@@ -167,7 +185,7 @@ getFields <- function(session, typeName, values,
       message('n*: ', edit.label.cols[i])
     }
     if(inputTypes[i] == 'dateInput') {
-      browser()
+      #browser()
       dt.sys <- as.Date(Sys.Date(),  date.format.db)
       value <- ifelse(missing(values),
                       as.character(dt.sys),
@@ -450,14 +468,15 @@ dtedit2 <- function(input, output,
   
   # internal functions
   
-  updateData <- function(proxy, data, ...) {
+  updateData <- function(proxy, pdata, ...) {
+    #browser()
     # Convert any list columns to characters before displaying
-    for(i in 1:ncol(data)) {
-      if(is.list(data[,i])) {
-        data[,i] <- sapply(data[,i], FUN = function(x) { paste0(x, collapse = ', ') })
+    for(i in 1:ncol(pdata)) {
+      if(is.list(pdata[,i])) {
+        pdata[,i] <- sapply(pdata[,i], FUN = function(x) { paste0(x, collapse = ', ') })
       }
     }
-    DT::replaceData(proxy, data, ...)
+    DT::replaceData(proxy, pdata, ...)
   }
   
 
@@ -647,9 +666,14 @@ dtedit2 <- function(input, output,
   
   if (shiny::is.reactive(thedataf)) {
     shiny::observeEvent(thedataf(), {
+      #browser()
       result$thedata <- as.data.frame(shiny::isolate(thedataf()))
-      updateData(dt.proxy,
-                 result$thedata[,view.cols, drop=FALSE],
+      if (nrow(result$thedata)==0) {
+        res_data <- f_remove_columns(result$thedata,view.cols, FALSE)
+      } else {
+        res_data <- result$thedata[,view.cols, drop=FALSE]
+      }
+      updateData(dt.proxy, res_data,
                  # was "result$thedata[,view.cols]",
                  # but that returns vector (not dataframe)
                  # if view.cols is only a single column
@@ -661,7 +685,7 @@ dtedit2 <- function(input, output,
 	##### Update functions #####################################################
 
   editModal <- function(row) {
-    browser()
+    #browser()
     ns <- session$ns
     output[[paste0(name, '_message')]] <- shiny::renderText('')
     shiny::isolate({
