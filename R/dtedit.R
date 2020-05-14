@@ -6,10 +6,11 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.27h'
+  res <- '0.0.28'
   return(res)
   # 0.0.26 - Version with field size check. (addJsInput)
   # 0.0.27 - Correct data input / Include ESCAPE function in DT.
+  # 0.0.28 - Add Easy Close parameter
 }
 
 
@@ -371,6 +372,8 @@ checkReq <- function(input, tag,
 #' @param show.update whether to show/enable the update button.
 #' @param show.insert whether to show/enable the insert button.
 #' @param show.copy whether to show/enablre the copy button.
+#' @param easyClose If TRUE, the modal dialog can be dismissed by clicking outside the dialog box, or be pressing the Escape key. 
+#'        If FALSE (the default), the modal dialog can't be dismissed in those ways; instead it must be dismissed by clicking on the dismiss button
 #' @param callback.delete a function called when the user deletes a row. This function should
 #'        return an updated data.frame.
 #' @param callback.update a function called when the user updates a row. This function should
@@ -425,6 +428,7 @@ dtedit2 <- function(input, output,
                     show.update = TRUE,
                     show.insert = TRUE,
                     show.copy = TRUE,
+                    easyClose = FALSE,
                     callback.delete = function(data, row) { },
                     callback.update = function(data, olddata, row) { },
                     callback.insert = function(data, row) { },
@@ -577,7 +581,8 @@ dtedit2 <- function(input, output,
                                               shiny::actionButton(ns(paste0(name, '_insert')),
                                                                   label.save), #'Save'
                                               width=12),
-                       size = modal.size
+                       size = modal.size, 
+                       easyClose = easyClose
     )
   }
   
@@ -703,7 +708,8 @@ dtedit2 <- function(input, output,
                        footer = shiny::column(shiny::modalButton(label.cancel), # CANCEL
                                               shiny::actionButton(ns(paste0(name, '_update')), label.save), #Save
                                               width=12),
-                       size = modal.size
+                       size = modal.size,
+                       easyClose = easyClose
     )
   }
   
@@ -801,7 +807,8 @@ dtedit2 <- function(input, output,
                                               shiny::actionButton(ns(paste0(name, '_delete')),
                                                                   label.delete), # 'Delete'
                                               width=12),
-                       size = modal.size
+                       size = modal.size,
+                       easyClose = FALSE
     )
   }
   
