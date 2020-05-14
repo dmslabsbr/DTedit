@@ -5,3 +5,4 @@
 /DTedit.Rproj
 *.Rproj
 Thumbs.db
+.DS_Store
