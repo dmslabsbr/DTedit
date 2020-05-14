@@ -6,7 +6,7 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.27h'
+  res <- '0.0.28'
   return(res)
   # 0.0.26 - Version with field size check. (addJsInput)
   # 0.0.27 - Correct data input / Include ESCAPE function in DT.
