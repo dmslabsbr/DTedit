@@ -356,7 +356,7 @@ checkReq <- function(input, tag,
 #' @param textarea.height the height of text area inputs.
 #' @param date.width the width of data inputs
 #' @param date.format the default for data format inputs. data.format.db - Defautl: 'yyyy-mm-dd'
-#' @param date.format.db the default for data format inputs from database - Default: '%Y-%m-%d'
+#' @param date.format.db the default for data format inputs from database - Default: 'Y-m-d'
 #' @param date.method the default methods for DT::formatDate.
 #' @param numeric.width the width of numeric inputs.
 #' @param select.width the width of drop down inputs.
