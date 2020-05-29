@@ -46,6 +46,7 @@ dtedit2(
   show.update = TRUE,
   show.insert = TRUE,
   show.copy = TRUE,
+  easyClose = FALSE,
   callback.delete = function(data, row) { },
   callback.update = function(data, olddata, row) { },
   callback.insert = function(data, row) { },
@@ -107,9 +108,9 @@ presented to the user for data entry.}
 
 \item{date.width}{the width of data inputs}
 
-\item{date.format}{the default for data format inputs. data.format.db - Defautl: 'yyyy-mm-dd'}
+\item{date.format}{the default for data format inputs. data.format.db - Default: 'yyyy-mm-dd'}
 
-\item{date.format.db}{the default for data format inputs from database - Default: '%Y-%m-%d'}
+\item{date.format.db}{the default for data format inputs from database - Default: 'Y-m-d'}
 
 \item{date.method}{the default methods for DT::formatDate.}
 
@@ -142,6 +143,9 @@ presented to the user for data entry.}
 \item{show.insert}{whether to show/enable the insert button.}
 
 \item{show.copy}{whether to show/enablre the copy button.}
+
+\item{easyClose}{If TRUE, the modal dialog can be dismissed by clicking outside the dialog box, or be pressing the Escape key. 
+If FALSE (the default), the modal dialog can't be dismissed in those ways; instead it must be dismissed by clicking on the dismiss button}
 
 \item{callback.delete}{a function called when the user deletes a row. This function should
 return an updated data.frame.}
