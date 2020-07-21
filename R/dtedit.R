@@ -6,11 +6,12 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.28'
+  res <- '0.0.29r'
   return(res)
   # 0.0.26 - Version with field size check. (addJsInput)
   # 0.0.27 - Correct data input / Include ESCAPE function in DT.
   # 0.0.28 - Add Easy Close parameter
+  # 0.0.29 - Bug fix - Required parameters and data insert/update
 }
 
 
@@ -186,7 +187,6 @@ getFields <- function(session, typeName, values,
       message('n*: ', edit.label.cols[i])
     }
     if(inputTypes[i] == 'dateInput') {
-      #browser()
       dt.sys <- as.Date(Sys.Date(),  date.format.db)
       value <- ifelse(missing(values),
                       as.character(dt.sys),
@@ -267,13 +267,21 @@ checkReq <- function(input, tag,
                      name, edit.require.cols, edit.label.cols, edit.cols) {
   lReq <- list() # TODO future use for color require fields
   lack <- c()
+  browser()
   for(i in edit.cols) {
     input_add <- shiny::isolate(input[[paste0(name, tag, i)]])
     lReq[i] <- TRUE
+    dt_ok <- TRUE
     if (all(i %in% edit.require.cols)) {
-      if (is.null(input_add) || identical(input_add,'') ) {
+      if (class(input_add) == "Date" ) {
+        dt_ok <- FALSE
+        if (any(nchar(as.character(input_add)) >= 8)) {
+          dt_ok = TRUE
+        }
+      }
+      if (is.null(input_add) || identical(input_add, '') || !dt_ok ) {
         lReq[i] <- FALSE
-        elem <- edit.label.cols[grep(paste0(i),edit.cols)]
+        elem <- edit.label.cols[grep(paste0(i), edit.cols)]
         lack <- c(lack,paste0(elem))
       }
     }
@@ -607,7 +615,7 @@ dtedit2 <- function(input, output,
       }
     }
     insert.click <- Sys.time()
-    
+    browser()
     newdata <- shiny::isolate(result$thedata)
     row <- nrow(newdata) + 1
     newdata[row,] <- NA
@@ -616,15 +624,6 @@ dtedit2 <- function(input, output,
     lack <- checkReq(input,'_add_',
                      name, edit.require.cols, edit.label.cols, edit.cols)
     lReq <- (length(lack)==0)
-    for(i in edit.cols) {
-      input_add <- input[[paste0(name, '_add_', i)]]
-      if(inputTypes[i] %in% c('selectInputMultiple')) {
-        newdata[[i]][row] <- list(input[[paste0(name, '_add_', i)]])
-      } else {
-        newdata[row,i] <- input[[paste0(name, '_add_', i)]]
-      }
-    }
-    
     if (!all(unlist(lReq))) {
       # need field
       msg <- edit.require.label
@@ -632,6 +631,19 @@ dtedit2 <- function(input, output,
       output[[paste0(name, '_message')]] <<- shiny::renderText(msg)
       return(FALSE)
     }
+    for(i in edit.cols) {
+      input_add <- shiny::isolate(input[[paste0(name, '_add_', i)]])
+      if (input.types[i] %in% c('dateInput')) {
+        # input_add <- ''  # I don't remember.
+      }
+      # message(paste0("input_add: ", input_add, ' i: ', i))
+      if(inputTypes[i] %in% c('selectInputMultiple')) {
+        newdata[[i]][row] <- list(input_add)
+      } else {
+        newdata[row,i] <- input_add
+      }
+    }
+    
     tryCatch({
       callback.data <- callback.insert(data = newdata, row = row)
       if(!is.null(callback.data) & is.data.frame(callback.data)) {
@@ -733,7 +745,8 @@ dtedit2 <- function(input, output,
       }
     }
     update.click <- Sys.time()
-    
+    xtag <- '_edit_'
+    browser()
     row <- input[[paste0(name, 'dt_rows_selected')]]
     if(!is.null(row)) {
       if(row > 0) {
@@ -741,21 +754,25 @@ dtedit2 <- function(input, output,
         # by dms
         lReq <- list() # TODO future use
         lack <- c()
-        lack <- checkReq(input, '_edit_',
+        lack <- checkReq(input, xtag, # '_edit_'
                          name, edit.require.cols, edit.label.cols, edit.cols)
         lReq <- (length(lack)==0)
-        for(i in edit.cols) {
-          if(inputTypes[i] %in% c('selectInputMultiple')) {
-            newdata[[i]][row] <- list(input[[paste0(name, '_edit_', i)]])
-          } else {
-            newdata[row,i] <- input[[paste0(name, '_edit_', i)]]
-          }
-        }
         if (!all(unlist(lReq))) {
           msg <- edit.require.label
           msg <- paste0(msg,toString(lack),'.')
           output[[paste0(name, '_message')]] <<- shiny::renderText(msg)
           return(FALSE)
+        }
+        for(i in edit.cols) {
+          input_edit <- shiny::isolate(input[[paste0(name, xtag, i)]])
+          if (input.types[i] %in% c('dateInput')) {
+            # input_edit<- ''  - Can't remember why.
+          }
+          if(inputTypes[i] %in% c('selectInputMultiple')) {
+            newdata[[i]][row] <- list(input_edit)
+          } else {
+            newdata[row,i] <- input_edit
+          }
         }
         
         tryCatch({

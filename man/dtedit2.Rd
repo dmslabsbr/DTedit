@@ -4,30 +4,56 @@
 \alias{dtedit2}
 \title{Function to create a DataTable with Add, Edit, and Delete buttons.}
 \usage{
-dtedit2(input, output, session, thedataf,
-  view.cols = names(shiny::isolate(if (shiny::is.reactive(thedataf)) {   
-   thedataf() } else {     thedataf })),
+dtedit2(
+  input,
+  output,
+  session,
+  thedataf,
+  view.cols = names(shiny::isolate(if (shiny::is.reactive(thedataf)) {     thedataf() }
+    else {     thedataf })),
   view.label.cols = shiny::isolate(view.cols),
-  edit.cols = names(shiny::isolate(if (shiny::is.reactive(thedataf)) {   
-   thedataf() } else {     thedataf })), edit.cols.size = list(),
+  edit.cols = names(shiny::isolate(if (shiny::is.reactive(thedataf)) {     thedataf() }
+    else {     thedataf })),
+  edit.cols.size = list(),
   edit.label.cols = shiny::isolate(edit.cols),
   edit.require.cols = NULL,
   edit.require.label = "The following fields are required: ",
-  input.types = c(), input.choices = NULL, selectize = TRUE,
-  modal.size = "m", text.width = "100\%", textarea.width = "570px",
-  textarea.height = "200px", date.width = "100px",
-  date.format = "yyyy-mm-dd", date.method = NULL,
-  numeric.width = "100px", select.width = "100\%",
-  defaultPageLength = 10, title.delete = "Delete",
+  input.types = c(),
+  input.choices = NULL,
+  selectize = TRUE,
+  modal.size = "m",
+  text.width = "100\%",
+  textarea.width = "570px",
+  textarea.height = "200px",
+  date.width = "100px",
+  date.format = "yyyy-mm-dd",
+  date.format.db = "\%Y-\%m-\%d",
+  date.method = NULL,
+  numeric.width = "100px",
+  select.width = "100\%",
+  defaultPageLength = 10,
+  title.delete = "Delete",
   title.delete.confirmation = "Are you sure you want to delete this record?",
-  title.edit = "Edit", title.add = "New", label.delete = "Delete",
-  label.edit = "Edit", label.add = "New", label.copy = "Copy",
-  label.cancel = "Cancel", label.save = "Save", show.delete = TRUE,
-  show.update = TRUE, show.insert = TRUE, show.copy = TRUE,
+  title.edit = "Edit",
+  title.add = "New",
+  label.delete = "Delete",
+  label.edit = "Edit",
+  label.add = "New",
+  label.copy = "Copy",
+  label.cancel = "Cancel",
+  label.save = "Save",
+  show.delete = TRUE,
+  show.update = TRUE,
+  show.insert = TRUE,
+  show.copy = TRUE,
+  easyClose = FALSE,
   callback.delete = function(data, row) { },
   callback.update = function(data, olddata, row) { },
-  callback.insert = function(data, row) { }, click.time.threshold = 2,
-  datatable.options = list(pageLength = defaultPageLength))
+  callback.insert = function(data, row) { },
+  click.time.threshold = 2,
+  datatable.options = list(pageLength = defaultPageLength),
+  escape = FALSE
+)
 }
 \arguments{
 \item{input}{Shiny input object passed from the server.}
@@ -82,7 +108,9 @@ presented to the user for data entry.}
 
 \item{date.width}{the width of data inputs}
 
-\item{date.format}{the default for data format inputs.}
+\item{date.format}{the default for data format inputs. data.format.db - Defautl: 'yyyy-mm-dd'}
+
+\item{date.format.db}{the default for data format inputs from database - Default: 'Y-m-d'}
 
 \item{date.method}{the default methods for DT::formatDate.}
 
@@ -116,6 +144,9 @@ presented to the user for data entry.}
 
 \item{show.copy}{whether to show/enablre the copy button.}
 
+\item{easyClose}{If TRUE, the modal dialog can be dismissed by clicking outside the dialog box, or be pressing the Escape key. 
+If FALSE (the default), the modal dialog can't be dismissed in those ways; instead it must be dismissed by clicking on the dismiss button}
+
 \item{callback.delete}{a function called when the user deletes a row. This function should
 return an updated data.frame.}
 
@@ -132,6 +163,9 @@ feature. For developers, a message is printed using the warning function.}
 
 \item{datatable.options}{options passed to \code{\link{DT::renderDataTable}}.
 See \link{https://rstudio.github.io/DT/options.html} for more information.}
+
+\item{escape}{Escaping Table Content - The argument escape determines whether the HTML entities in the table are escaped or not.
+See \link{https://rstudio.github.io/DT} for more information.}
 
 \item{name}{the name of the UI output. That is, put \code{uiOutput(name)} where
 you want the DataTable in \code{ui.R}. When using more that one \code{dtedit}
@@ -172,6 +206,7 @@ returned that will become the current state of the data table. If anything
 else is returned then the internal \code{data.frame} will be used.
 }
 \seealso{
-Other Datatable Edit functions: \code{\link{dteditUI}}
+Other Datatable Edit functions: 
+\code{\link{dteditUI}()}
 }
 \concept{Datatable Edit functions}
