@@ -6,12 +6,13 @@
 #'
 #' @export
 version <- function() {
-  res <- '0.0.29r'
+  res <- '0.0.30a'
   return(res)
   # 0.0.26 - Version with field size check. (addJsInput)
   # 0.0.27 - Correct data input / Include ESCAPE function in DT.
   # 0.0.28 - Add Easy Close parameter
   # 0.0.29 - Bug fix - Required parameters and data insert/update
+  # 0.0.30 - Correct addJsInput
 }
 
 
@@ -43,11 +44,12 @@ dteditUI <- function(id) {
 addJsInput <- function(session, name, typeName, edit.cols, edit.cols.size) {
   if (length(edit.cols.size) == 0) {return ()}
   cmd <- ''
+  browser()
   ns <- session$ns
   for(i in seq_along(edit.cols.size)) {
-    col_size <- edit.cols.size[[edit.cols[i]]]
+    col_size <- edit.cols.size[[i]]
     if (!is.null(col_size)) {
-      ui_name <- ns(paste0(name, typeName, edit.cols[i]))
+      ui_name <- ns(paste0(name, typeName, names(edit.cols.size[i])))
       jsAdd <- paste0("$('#", ui_name, "').attr('maxlength',",col_size,"); ")
       cmd <- paste0(cmd, jsAdd)
     }
@@ -469,6 +471,8 @@ dtedit2 <- function(input, output,
   message('DataTableName: ', DataTableName)
   message('- New Name: ', name)
   
+  browser()
+  
   result <- shiny::reactiveValues()
   result$thedata <- thedata
   result$view.cols <- view.cols
@@ -600,6 +604,7 @@ dtedit2 <- function(input, output,
   shiny::observeEvent(input[[paste0(name, '_add')]], {
     if(!is.null(row)) {
       shiny::showModal(addModal())
+      browser()
       addJsInput(session, name, '_add_', edit.cols, edit.cols.size)
     }
   })
@@ -674,6 +679,7 @@ dtedit2 <- function(input, output,
         shiny::isolate({
           shiny::showModal(addModal(values=result$thedata[row,]))
         })
+        browser()
         addJsInput(session, name, '_add_', edit.cols, edit.cols.size)
       }
     }
@@ -726,10 +732,12 @@ dtedit2 <- function(input, output,
   }
   
   shiny::observeEvent(input[[paste0(name, '_edit')]], {
+    browser()
     row <- input[[paste0(name, 'dt_rows_selected')]]
     if(!is.null(row)) {
       if(row > 0) {
         shiny::showModal(editModal(row))
+        browser()
         addJsInput(session, name, '_edit_', edit.cols, edit.cols.size)
       }
     }
